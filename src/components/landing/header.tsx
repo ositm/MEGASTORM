@@ -23,20 +23,17 @@ export default function Header() {
           
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
-          <div className="hidden md:flex items-center space-x-6 text-sm font-medium">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-foreground/60 transition-colors hover:text-foreground/80"
-              >
-                {link.label}
-              </Link>
-            ))}
+          <div className="hidden md:flex items-center space-x-2">
+            <Button variant="ghost" asChild>
+                <Link href="#about">About</Link>
+            </Button>
+            <Button variant="ghost" asChild>
+                <Link href="#contact">Contact</Link>
+            </Button>
+            <Button variant="ghost" asChild>
+                <Link href="/auth/signin">Sign In</Link>
+            </Button>
           </div>
-          <Button asChild className="hidden md:inline-flex bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Link href="/auth/signin">Book Test</Link>
-          </Button>
           <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>

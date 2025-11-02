@@ -19,7 +19,7 @@ export default function HeroSection() {
               <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
                 <Link href="/auth/signin">Book a test</Link>
               </Button>
-              <Button asChild variant="link" size="lg" className="text-accent-foreground/80">
+              <Button asChild variant="outline" size="lg">
                 <Link href="#about">Learn more</Link>
               </Button>
             </div>
