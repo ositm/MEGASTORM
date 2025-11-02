@@ -1,40 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import {
-  Stethoscope,
-  Home,
-  CalendarPlus,
-  CalendarCheck2,
-  ClipboardList,
-  Settings,
-  LifeBuoy,
-  LogOut,
-} from 'lucide-react';
-import {
-  SidebarHeader,
-  SidebarContent,
-  SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  useSidebar,
-} from '@/components/ui/sidebar';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 const mainNav = [
-  { href: '/home', icon: Home, label: 'Home' },
-  { href: '/schedule', icon: CalendarPlus, label: 'Schedule Appointment' },
-  { href: '/appointments', icon: CalendarCheck2, label: 'My Appointments' },
-  { href: '/results', icon: ClipboardList, label: 'Test Results' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
-  { href: '/support', icon: LifeBuoy, label: 'Support & FAQs' },
+  { href: '/home', icon: '/home.png', label: 'Home' },
+  { href: '/schedule', icon: '/calendar.png', label: 'Schedule Appointment' },
+  { href: '/appointments', icon: '/time.png', label: 'My Appointments' },
+  { href: '/results', icon: '/result.png', label: 'Test Results' },
+  { href: '/settings', icon: '/settings.png', label: 'Settings' },
 ];
 
-export default function AppSidebar() {
-  const pathname = usePathname();
-  const { setOpenMobile } = useSidebar();
+const otherNav = [
+  { href: '/support', icon: '/faq.png', label: 'Support & FAQs' },
+];
+
+interface AppSidebarProps {
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+}
+
+export default function AppSidebar({ sidebarOpen, setSidebarOpen }: AppSidebarProps) {
   const router = useRouter();
 
   const handleLogout = () => {
@@ -42,58 +29,95 @@ export default function AppSidebar() {
     router.push('/auth/signin');
   };
 
-  const closeSidebar = () => setOpenMobile(false);
-
   return (
     <>
-      <SidebarHeader>
-        <div className="flex items-center gap-2 p-2">
-          <Stethoscope className="size-6 text-primary" />
-          <span className="text-lg font-bold font-headline text-primary">LabLink</span>
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
+
+      <aside
+        className={`fixed lg:sticky top-0 left-0 h-full bg-white z-40 
+    transition-transform duration-300 ease-in-out
+    ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+    lg:translate-x-0 w-64 lg:w-[16%] xl:w-[14%] shadow-lg lg:shadow-none
+    flex flex-col`}
+      >
+        <div className="hidden lg:flex items-center gap-2 p-4 border-b">
+          <Image
+            src="/lab-link-logo.png"
+            alt="logo"
+            width={50}
+            height={50}
+            className="w-[50px] h-[50px]"
+          />
+          <span className="font-bold text-lg">LabLink</span>
         </div>
-      </SidebarHeader>
 
-      <SidebarContent className="p-2">
-        <SidebarMenu>
-          {mainNav.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname.startsWith(item.href)}
-                onClick={closeSidebar}
-                tooltip={item.label}
-                className="justify-start"
-              >
-                <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.label}</span>
+        <div className="flex-1 flex flex-col justify-between overflow-y-auto pt-16 lg:pt-0">
+          <div>
+            <nav className="flex flex-col py-4">
+              {mainNav.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-primary transition-colors"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <Image
+                    src={item.icon}
+                    alt={item.label}
+                    width={24}
+                    height={24}
+                    className="w-6 h-6"
+                  />
+                  <span className="text-sm">{item.label}</span>
                 </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarContent>
-
-      <SidebarFooter>
-        <SidebarMenu>
-           <SidebarMenuItem>
-             <SidebarMenuButton onClick={handleLogout} className="justify-start" tooltip="Logout">
-              <LogOut />
-              <span>Logout</span>
-             </SidebarMenuButton>
-           </SidebarMenuItem>
-         </SidebarMenu>
-        <div className="flex items-center gap-3 p-3">
-          <Avatar>
-            <AvatarImage src="https://picsum.photos/seed/user/40/40" />
-            <AvatarFallback>CW</AvatarFallback>
-          </Avatar>
-          <div className="overflow-hidden">
-            <p className="truncate font-semibold">chukwu</p>
-            <p className="truncate text-xs text-muted-foreground">chukwu@example.com</p>
+              ))}
+            </nav>
+            <div className="flex flex-col py-4">
+              <span className="px-4 text-gray-400 font-light text-sm my-2">
+                OTHER
+              </span>
+              {otherNav.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-primary transition-colors"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <Image
+                    src={item.icon}
+                    alt={item.label}
+                    width={24}
+                    height={24}
+                    className="w-6 h-6"
+                  />
+                  <span className="text-sm">{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div className="p-4 border-t">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 w-full px-4 py-2 text-gray-600 hover:bg-primary hover:text-white rounded-lg transition-colors"
+            >
+              <Image
+                src="/logout.png"
+                alt="logout"
+                width={20}
+                height={20}
+                className="w-5 h-5"
+              />
+              <span className="text-sm">Logout</span>
+            </button>
           </div>
         </div>
-      </SidebarFooter>
+      </aside>
     </>
   );
 }
