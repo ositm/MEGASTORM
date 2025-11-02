@@ -6,8 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const navLinks = [
-  { href: '#about', label: 'About' },
-  { href: '#contact', label: 'Contact' },
+  { href: '/home', label: 'Home' },
+  { href: '/schedule', label: 'Schedule Appointment' },
+  { href: '/appointments', label: 'My Appointments' },
+  { href: '/results', label: 'Test Results' },
+  { href: '/settings', label: 'Settings' },
+  { href: '/support', label: 'Support & FAQs' },
   { href: '/auth/signin', label: 'Sign In' },
 ];
 
@@ -30,7 +34,7 @@ export default function Header() {
             <Button variant="ghost" asChild>
                 <Link href="#contact">Contact</Link>
             </Button>
-            <Button variant="ghost" asChild>
+            <Button asChild>
                 <Link href="/auth/signin">Sign In</Link>
             </Button>
           </div>
@@ -59,7 +63,7 @@ export default function Header() {
                       </Link>
                     ))}
                   </nav>
-                  <Button asChild className="mt-8 bg-primary hover:bg-primary/90 text-primary-foreground">
+                  <Button asChild className="mt-8">
                     <Link href="/auth/signin">Book Test</Link>
                   </Button>
                 </div>

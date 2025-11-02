@@ -19,20 +19,15 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarSeparator,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from './ui/button';
 
 const mainNav = [
   { href: '/home', icon: Home, label: 'Home' },
   { href: '/schedule', icon: CalendarPlus, label: 'Schedule Appointment' },
   { href: '/appointments', icon: CalendarCheck2, label: 'My Appointments' },
   { href: '/results', icon: ClipboardList, label: 'Test Results' },
-];
-
-const otherNav = [
   { href: '/settings', icon: Settings, label: 'Settings' },
   { href: '/support', icon: LifeBuoy, label: 'Support & FAQs' },
 ];
@@ -61,26 +56,6 @@ export default function AppSidebar() {
       <SidebarContent className="p-2">
         <SidebarMenu>
           {mainNav.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <Link href={item.href} passHref legacyBehavior>
-                <SidebarMenuButton
-                  isActive={pathname.startsWith(item.href)}
-                  onClick={closeSidebar}
-                  tooltip={item.label}
-                  className="justify-start"
-                >
-                  <item.icon />
-                  <span>{item.label}</span>
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-
-        <SidebarSeparator className="my-4" />
-
-        <SidebarMenu>
-          {otherNav.map((item) => (
             <SidebarMenuItem key={item.href}>
               <Link href={item.href} passHref legacyBehavior>
                 <SidebarMenuButton
