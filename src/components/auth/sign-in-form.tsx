@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Stethoscope } from 'lucide-react';
+import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -40,50 +40,82 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export function SignInForm() {
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault();
     // Simulate successful login
     router.push('/home');
   };
-  
+
   return (
-    <Card className="w-full max-w-md shadow-2xl">
-      <CardHeader className="text-center">
-        <div className="flex justify-center items-center mb-4">
-          <Stethoscope className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold font-headline ml-2 text-primary">LabLink</h1>
-        </div>
-        <CardTitle className="text-2xl font-headline">Sign In</CardTitle>
-        <CardDescription>to access your health dashboard</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSignIn} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="Enter your email address" required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" placeholder="Enter your password" required />
-          </div>
-          <Button type="submit" className="w-full bg-primary hover:bg-primary/90">Sign In</Button>
-        </form>
-        <Separator className="my-6" />
-        <div className="space-y-4">
-          <p className="text-center text-sm text-muted-foreground">- Or sign in with -</p>
-          <Button variant="outline" className="w-full" onClick={() => router.push('/home')}>
-            <GoogleIcon className="mr-2" />
-            Continue with Google
-          </Button>
-        </div>
-        <div className="mt-6 text-center text-sm">
-          Don&apos;t have an account?{' '}
-          <Link href="/auth/signup" className="font-semibold text-primary hover:underline">
-            Sign Up
-          </Link>
-        </div>
-      </CardContent>
+    <Card className="w-full max-w-md shadow-lg">
+        <CardContent className="p-6 pt-0">
+            <h1 className="text-xl font-semibold mb-4 py-2 text-start">Sign In</h1>
+            <form onSubmit={handleSignIn}>
+                <div className="flex flex-col gap-4">
+                    <div>
+                        <Label htmlFor="email">Email</Label>
+                        <div className="space-y-2">
+                        <Input id="email" type="email" name="email" placeholder="Enter your email address" required />
+                        </div>
+                    </div>
+
+                    <div className="relative">
+                        <Label htmlFor="password">Password</Label>
+                        <div className="space-y-2">
+                            <div className="relative">
+                                <Input
+                                id="password"
+                                name="password"
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Enter your password"
+                                className="pr-10"
+                                required
+                                />
+                                <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 h-9 w-9"
+                                onClick={() => setShowPassword(!showPassword)}
+                                >
+                                {showPassword ? (
+                                    <EyeOff className="h-[18px] w-[18px]" />
+                                ) : (
+                                    <Eye className="h-[18px] w-[18px]" />
+                                )}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <Button type="submit" className="w-full lg:w-auto mt-5 min-w-[140px] py-4 px-8 flex items-center justify-center gap-2 rounded-[24px] text-white">
+                    Sign In
+                </Button>
+            </form>
+
+            <div className="mt-4 w-full space-y-3">
+                <div className="flex items-center">
+                    <div className="flex-grow border-t border-gray-300"></div>
+                    <span className="px-4 text-gray-500 text-sm">Or sign in with</span>
+                    <div className="flex-grow border-t border-gray-300"></div>
+                </div>
+                <div className="w-full">
+                    <Button variant="outline" className="flex w-full items-center justify-center gap-1" onClick={() => router.push('/home')}>
+                        <GoogleIcon className="w-5 h-5" />
+                        Continue with Google
+                    </Button>
+                </div>
+            </div>
+        </CardContent>
+        <CardFooter className="text-center py-4 block">
+            <span className="text-gray-600">Don't have an account? </span>
+            <Link href="/auth/signup" className="text-primary font-semibold hover:underline">
+                Sign Up
+            </Link>
+      </CardFooter>
     </Card>
   );
 }
