@@ -12,7 +12,6 @@ const navLinks = [
   { href: '/results', label: 'Test Results' },
   { href: '/settings', label: 'Settings' },
   { href: '/support', label: 'Support & FAQs' },
-  { href: '/auth/signin', label: 'Sign In' },
 ];
 
 export default function Header() {
@@ -23,11 +22,8 @@ export default function Header() {
           <Stethoscope className="h-6 w-6 text-primary" />
           <span className="font-bold font-headline inline-block text-primary">LabLink</span>
         </Link>
-        <nav className="hidden flex-1 items-center space-x-6 text-sm font-medium md:flex">
-          
-        </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
-          <div className="hidden md:flex items-center space-x-2">
+          <nav className="hidden md:flex items-center space-x-2">
             <Button variant="ghost" asChild>
                 <Link href="#about">About</Link>
             </Button>
@@ -37,7 +33,7 @@ export default function Header() {
             <Button asChild>
                 <Link href="/auth/signin">Sign In</Link>
             </Button>
-          </div>
+          </nav>
           <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>
@@ -62,9 +58,15 @@ export default function Header() {
                         {link.label}
                       </Link>
                     ))}
+                     <Link
+                        href="/auth/signin"
+                        className="text-lg font-medium text-foreground/80 transition-colors hover:text-foreground"
+                      >
+                        Sign In
+                      </Link>
                   </nav>
                   <Button asChild className="mt-8">
-                    <Link href="/auth/signin">Book Test</Link>
+                    <Link href="/schedule">Book Test</Link>
                   </Button>
                 </div>
               </SheetContent>
