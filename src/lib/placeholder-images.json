@@ -1,3 +1,22 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "easy-booking",
+      "description": "A person scheduling an appointment on a phone.",
+      "imageUrl": "https://images.unsplash.com/photo-1701673965651-a63dca77896f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxjYWxlbmRhciUyMGFwcG9pbnRtZW50fGVufDB8fHx8MTc2MjAxMzMwNHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "calendar appointment"
+    },
+    {
+      "id": "quick-results",
+      "description": "A doctor reviewing medical charts on a tablet.",
+      "imageUrl": "https://images.unsplash.com/photo-1758691461530-b215ed4ede6a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bWVkaWNhbCUyMGNoYXJ0fGVufDB8fHx8MTc2MjAzMDg1MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "medical chart"
+    },
+    {
+      "id": "privacy-first",
+      "description": "A digital lock icon symbolizing data security.",
+      "imageUrl": "https://images.unsplash.com/photo-1561756719-55231c95c511?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxsb2NrJTIwc2VjdXJpdHl8ZW58MHx8fHwxNzYyMDg0MTAwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "lock security"
+    }
+  ]
 }
