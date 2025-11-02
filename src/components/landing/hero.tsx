@@ -16,11 +16,11 @@ export default function HeroSection() {
               </p>
             </div>
             <div className="flex w-full flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Link href="/auth/signin">Book a Lab Test →</Link>
+              <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Link href="/auth/signin">Book a test</Link>
               </Button>
               <Button asChild variant="link" size="lg" className="text-accent-foreground/80">
-                <Link href="#newsletter">Join Our Health Insights Mailing List</Link>
+                <Link href="#about">Learn more</Link>
               </Button>
             </div>
           </div>

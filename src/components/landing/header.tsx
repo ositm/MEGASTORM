@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 const navLinks = [
   { href: '#about', label: 'About' },
   { href: '#contact', label: 'Contact' },
+  { href: '/auth/signin', label: 'Sign In' },
 ];
 
 export default function Header() {
@@ -19,21 +20,21 @@ export default function Header() {
           <span className="font-bold font-headline inline-block text-primary">LabLink</span>
         </Link>
         <nav className="hidden flex-1 items-center space-x-6 text-sm font-medium md:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-foreground/60 transition-colors hover:text-foreground/80"
-            >
-              {link.label}
-            </Link>
-          ))}
+          
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
-          <Button variant="ghost" asChild>
-            <Link href="/auth/signin">Sign In</Link>
-          </Button>
-          <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
+          <div className="hidden md:flex items-center space-x-6 text-sm font-medium">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-foreground/60 transition-colors hover:text-foreground/80"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+          <Button asChild className="hidden md:inline-flex bg-primary hover:bg-primary/90 text-primary-foreground">
             <Link href="/auth/signin">Book Test</Link>
           </Button>
           <div className="md:hidden">
@@ -61,7 +62,7 @@ export default function Header() {
                       </Link>
                     ))}
                   </nav>
-                  <Button asChild className="mt-8 bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <Button asChild className="mt-8 bg-primary hover:bg-primary/90 text-primary-foreground">
                     <Link href="/auth/signin">Book Test</Link>
                   </Button>
                 </div>
