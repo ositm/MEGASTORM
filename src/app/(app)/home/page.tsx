@@ -93,10 +93,10 @@ export default function HomePage() {
                   </Link>
                 </div>
                 <Button asChild variant="outline" className="w-full p-4 border-2 border-dashed rounded-lg text-center hover:border-blue-500 group">
-                  <Link href="/schedule" className='flex items-center justify-center gap-2 text-gray-600 group-hover:text-blue-500'>
+                  <div className='flex items-center justify-center gap-2 text-gray-600 group-hover:text-blue-500'>
                     <Plus className="h-5 w-5" />
                     <span>Schedule New Appointment</span>
-                  </Link>
+                  </div>
                 </Button>
               </div>
               <div className="bg-white rounded-xl shadow-sm p-6">
