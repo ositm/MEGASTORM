@@ -62,7 +62,7 @@ export default function HomePage() {
                   </p>
                 </Link>
                 <Link
-                  href="#"
+                  href="/find-a-lab"
                   className="p-4 rounded-xl bg-white border hover:border-blue-500 transition-all duration-200 text-left group"
                 >
                   <div className="bg-purple-100 text-purple-600 p-2 rounded-lg w-fit">
