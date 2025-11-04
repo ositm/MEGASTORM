@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   User,
   Lock,
@@ -10,7 +11,6 @@ import {
   CreditCard,
   Shield,
   HelpCircle,
-  ChevronRight,
 } from 'lucide-react';
 
 const settingsLinks = [
@@ -25,24 +25,32 @@ const settingsLinks = [
 export default function SettingsNav() {
   const pathname = usePathname();
 
+  const isLinkActive = (href: string) => {
+    if (href === '/settings/profile' && pathname === '/settings') {
+      return true;
+    }
+    return pathname === href;
+  }
+
   return (
-    <nav className="flex flex-col gap-2">
-      {settingsLinks.map((link) => (
-        <Link
-          key={link.href}
-          href={link.href}
-          className={cn(
-            'flex items-center justify-between p-4 rounded-lg transition-colors text-foreground hover:bg-muted',
-            pathname === link.href && 'bg-muted'
-          )}
-        >
-          <div className="flex items-center gap-4">
-            <link.icon className="h-5 w-5 text-muted-foreground" />
-            <span className="font-medium">{link.label}</span>
-          </div>
-          <ChevronRight className="h-5 w-5 text-muted-foreground" />
-        </Link>
-      ))}
-    </nav>
+    <div className="rounded-xl border bg-card text-card-foreground shadow">
+      <div className="p-6 pt-6">
+        <div className="space-y-2">
+          {settingsLinks.map((link) => (
+            <Button
+              key={link.href}
+              variant={isLinkActive(link.href) ? 'secondary' : 'ghost'}
+              className="w-full justify-start"
+              asChild
+            >
+              <Link href={link.href}>
+                <link.icon className="mr-3 h-5 w-5" />
+                {link.label}
+              </Link>
+            </Button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
