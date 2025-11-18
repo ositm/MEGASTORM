@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useFirebase } from '@/firebase/provider';
+import { signOut } from 'firebase/auth';
 
 const mainNav = [
   { href: '/home', icon: '/home.png', label: 'Home' },
@@ -23,10 +25,16 @@ interface AppSidebarProps {
 
 export default function AppSidebar({ sidebarOpen, setSidebarOpen }: AppSidebarProps) {
   const router = useRouter();
+  const { auth } = useFirebase();
 
-  const handleLogout = () => {
-    // In a real app, you'd clear the user session here
-    router.push('/auth/signin');
+  const handleLogout = async () => {
+    if (!auth) return;
+    try {
+      await signOut(auth);
+      router.push('/auth/signin');
+    } catch (error) {
+      console.error('Logout Error:', error);
+    }
   };
 
   return (

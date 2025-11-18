@@ -14,7 +14,7 @@ export default function HeroSection() {
           <Button asChild size="lg">
             <Link href="/auth/signin">Book a Test</Link>
           </Button>
-          <Button asChild variant="outline" size="lg" className="text-black">
+          <Button asChild variant="outline" size="lg" className="bg-white text-black">
             <Link href="/about">Learn more</Link>
           </Button>
         </div>

@@ -2,12 +2,21 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useFirebase } from '@/firebase/provider';
+import {
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+} from 'firebase/auth';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -38,26 +47,94 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+const formSchema = z.object({
+  email: z.string().email({ message: 'Please enter a valid email address.' }),
+  password: z
+    .string()
+    .min(6, { message: 'Password must be at least 6 characters.' }),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
 export function SignInForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const { auth, user, isUserLoading } = useFirebase();
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSignIn = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Simulate successful login
-    router.push('/home');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+  });
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/home');
+    }
+  }, [user, isUserLoading, router]);
+
+  const handleGoogleSignIn = async () => {
+    if (!auth) return;
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      // Let the useEffect handle the redirect
+    } catch (error: any) {
+      setError(error.message);
+      console.error('Google Sign-In Error:', error);
+    }
   };
+
+  const onSubmit: SubmitHandler<FormData> = async (data) => {
+    if (!auth) return;
+    setError(null);
+    try {
+      await signInWithEmailAndPassword(auth, data.email, data.password);
+      // Let the useEffect handle the redirect
+    } catch (error: any) {
+      let errorMessage = 'An unexpected error occurred.';
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            errorMessage = 'Invalid email or password.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Please enter a valid email address.';
+            break;
+          default:
+            errorMessage = 'Failed to sign in. Please try again.';
+            break;
+        }
+      }
+      setError(errorMessage);
+      console.error('Email Sign-In Error:', error);
+    }
+  };
+
+  if (isUserLoading || user) {
+     return (
+      <div className="flex h-screen w-screen items-center justify-center">
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md shadow-lg">
         <CardContent className="p-6 pt-0">
             <h1 className="text-xl font-semibold mb-4 py-2 text-start">Sign In</h1>
-            <form onSubmit={handleSignIn}>
+            <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="flex flex-col gap-4">
                     <div>
                         <Label htmlFor="email">Email</Label>
                         <div className="space-y-2">
-                        <Input id="email" type="email" name="email" placeholder="Enter your email address" required />
+                        <Input id="email" type="email" placeholder="Enter your email address" {...register('email')} />
+                         {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                         </div>
                     </div>
 
@@ -67,11 +144,10 @@ export function SignInForm() {
                             <div className="relative">
                                 <Input
                                 id="password"
-                                name="password"
                                 type={showPassword ? 'text' : 'password'}
                                 placeholder="Enter your password"
                                 className="pr-10"
-                                required
+                                {...register('password')}
                                 />
                                 <Button
                                 type="button"
@@ -87,12 +163,13 @@ export function SignInForm() {
                                 )}
                                 </Button>
                             </div>
+                             {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
                         </div>
                     </div>
                 </div>
-
-                <Button type="submit" className="w-full lg:w-auto mt-5 min-w-[140px] py-4 px-8 flex items-center justify-center gap-2 rounded-[24px] text-white">
-                    Sign In
+                 {error && <p className="text-red-500 text-sm text-center mt-4">{error}</p>}
+                <Button type="submit" className="w-full lg:w-auto mt-5 min-w-[140px] py-4 px-8 flex items-center justify-center gap-2 rounded-[24px] text-white" disabled={isSubmitting}>
+                    {isSubmitting ? 'Signing In...' : 'Sign In'}
                 </Button>
             </form>
 
@@ -103,7 +180,7 @@ export function SignInForm() {
                     <div className="flex-grow border-t border-gray-300"></div>
                 </div>
                 <div className="w-full">
-                    <Button variant="outline" className="flex w-full items-center justify-center gap-1" onClick={() => router.push('/home')}>
+                    <Button variant="outline" className="flex w-full items-center justify-center gap-1" onClick={handleGoogleSignIn} disabled={isSubmitting}>
                         <GoogleIcon className="w-5 h-5" />
                         Continue with Google
                     </Button>

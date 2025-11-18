@@ -1,17 +1,32 @@
 'use client';
 
 import AppSidebar from '@/components/app-sidebar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useUser } from '@/firebase/provider';
+import { useRouter } from 'next/navigation';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
-export default function AppLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+function AppLayoutContent({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/auth/signin');
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center">
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row overflow-hidden">
@@ -54,5 +69,18 @@ export default function AppLayout({
         </button>
       </div>
     </div>
+  );
+}
+
+
+export default function AppLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <FirebaseClientProvider>
+      <AppLayoutContent>{children}</AppLayoutContent>
+    </FirebaseClientProvider>
   );
 }
