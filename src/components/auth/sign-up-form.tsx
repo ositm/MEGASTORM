@@ -88,7 +88,7 @@ export function SignUpForm() {
     resolver: zodResolver(formSchema),
   });
 
-   useEffect(() => {
+  useEffect(() => {
     if (!isUserLoading && user) {
       router.push('/home');
     }
@@ -133,9 +133,9 @@ export function SignUpForm() {
       });
       // Let the useEffect handle the redirect
     } catch (error: any) {
-       let errorMessage = 'An unexpected error occurred.';
+      let errorMessage = 'An unexpected error occurred.';
       if (error.code) {
-         switch (error.code) {
+        switch (error.code) {
           case 'auth/email-already-in-use':
             errorMessage = 'This email is already registered. Please sign in.';
             break;
@@ -167,9 +167,9 @@ export function SignUpForm() {
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
-           <Link href="/" className="text-5xl flex flex-col items-center font-bold text-black mb-4">
-              <Image src="/lab-link-logo.png" alt="Lab Link Logo" width={80} height={80} className="h-20 w-20" />
-              <span className="text-3xl">Lab Link</span>
+          <Link href="/" className="text-5xl flex flex-col items-center font-bold text-black mb-4">
+            <Image src="/lab-link-logo.jpg" alt="Lab Link Logo" width={80} height={80} className="h-20 w-20" />
+            <span className="text-3xl">Lab Link</span>
           </Link>
           <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
           <CardDescription>
@@ -178,16 +178,16 @@ export function SignUpForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-             <div className="grid grid-cols-2 gap-4">
-               <div>
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" placeholder="John" {...register('firstName')} />
-                  {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName.message}</p>}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="firstName">First Name</Label>
+                <Input id="firstName" placeholder="John" {...register('firstName')} />
+                {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName.message}</p>}
               </div>
               <div>
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" placeholder="Doe" {...register('lastName')} />
-                   {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>}
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input id="lastName" placeholder="Doe" {...register('lastName')} />
+                {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>}
               </div>
             </div>
             <div>
@@ -205,25 +205,25 @@ export function SignUpForm() {
               <Input id="confirmPassword" type="password" placeholder="••••••••" {...register('confirmPassword')} />
               {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
             </div>
-             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? 'Creating Account...' : 'Create Account'}
             </Button>
           </form>
 
-           <div className="mt-4 w-full space-y-3">
-                <div className="flex items-center">
-                    <div className="flex-grow border-t border-gray-300"></div>
-                    <span className="px-4 text-gray-500 text-sm">Or sign up with</span>
-                    <div className="flex-grow border-t border-gray-300"></div>
-                </div>
-                <div className="w-full">
-                    <Button variant="outline" className="flex w-full items-center justify-center gap-1" onClick={handleGoogleSignIn}>
-                        <GoogleIcon className="w-5 h-5" />
-                        Continue with Google
-                    </Button>
-                </div>
+          <div className="mt-4 w-full space-y-3">
+            <div className="flex items-center">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="px-4 text-gray-500 text-sm">Or sign up with</span>
+              <div className="flex-grow border-t border-gray-300"></div>
             </div>
+            <div className="w-full">
+              <Button variant="outline" className="flex w-full items-center justify-center gap-1" onClick={handleGoogleSignIn}>
+                <GoogleIcon className="w-5 h-5" />
+                Continue with Google
+              </Button>
+            </div>
+          </div>
 
         </CardContent>
         <CardFooter className="text-center justify-center">

@@ -39,7 +39,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
         </button>
         <Link href="/home" className="flex items-center gap-2">
           <Image
-            src="/lab-link-logo.png"
+            src="/lab-link-logo.jpg"
             alt="logo"
             width={30}
             height={30}

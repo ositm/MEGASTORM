@@ -20,10 +20,10 @@ export default function SignInPage() {
         </div>
         <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col justify-center items-center p-6 overflow-y-auto">
           <div className="py-5">
-              <Link href="/" className="text-5xl flex flex-col items-center font-bold text-black">
-                  <Image src="/lab-link-logo.png" alt="Lab Link Logo" width={150} height={150} className="h-[150px] w-[150px] " />
-                  <span>Lab Link</span>
-              </Link>
+            <Link href="/" className="text-5xl flex flex-col items-center font-bold text-black">
+              <Image src="/lab-link-logo.jpg" alt="Lab Link Logo" width={150} height={150} className="h-[150px] w-[150px] " />
+              <span>Lab Link</span>
+            </Link>
           </div>
           <SignInForm />
         </div>

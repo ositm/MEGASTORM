@@ -24,10 +24,10 @@ export default function Header() {
       <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-black/30 backdrop-blur-lg shadow-lg border-b border-white/10' : 'bg-transparent'}`}>
         <div className="max-w-[1500px] mx-auto px-6 py-4 flex justify-between items-center">
           <Link href="/" className="flex gap-2 text-white items-center uppercase font-bold text-secondary z-50">
-            <Image src="/lab-link-logo.png" alt="Lab Link Logo" width={50} height={50} className="h-[50px] w-[50px]" />
+            <Image src="/lab-link-logo.jpg" alt="Lab Link Logo" width={50} height={50} className="h-[50px] w-[50px]" />
             Lab Link
           </Link>
-          
+
           <div className="hidden md:flex gap-4">
             <ul className="hidden md:flex items-center gap-8 text-white font-medium">
               <li className="relative flex items-center group">
@@ -39,6 +39,9 @@ export default function Header() {
                 <span className="absolute left-0 bottom-0 h-[2px] bg-primary transition-all duration-300 group-hover:w-full w-0"></span>
               </li>
             </ul>
+            <Button asChild variant="ghost" className="text-white hover:text-primary hover:bg-white/10">
+              <Link href="/auth/signin">Sign In</Link>
+            </Button>
             <Button asChild className='text-white'>
               <Link href="/auth/signin">Book a Test</Link>
             </Button>
@@ -64,12 +67,15 @@ export default function Header() {
                   <li key={item} className={`transform transition-all duration-300 ${isOpen ? `delay-${100 * (index + 1)} translate-x-0 opacity-100` : 'translate-x-8 opacity-0'}`}>
                     <Link href={`/${item.toLowerCase()}`} className="flex items-center justify-between p-4 rounded-lg transition-all duration-300 text-white hover:bg-white/5">
                       <span className="text-lg">{item}</span>
-                      <ChevronRight className="w-[18px] h-[18px] text-gray-400"/>
+                      <ChevronRight className="w-[18px] h-[18px] text-gray-400" />
                     </Link>
                   </li>
                 ))}
               </ul>
-              <Button asChild size="lg" className="w-full mt-10 text-white">
+              <Button asChild variant="ghost" className="w-full mt-4 text-white hover:text-primary hover:bg-white/10">
+                <Link href="/auth/signin">Sign In</Link>
+              </Button>
+              <Button asChild size="lg" className="w-full mt-4 text-white">
                 <Link href="/auth/signin">Book a Test</Link>
               </Button>
             </div>

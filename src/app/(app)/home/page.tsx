@@ -11,8 +11,14 @@ import {
   CircleAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useUser } from '@/firebase/provider';
+import Image from 'next/image';
+import { useResults } from '@/hooks/use-results';
 
 export default function HomePage() {
+  const { user } = useUser();
+  const { results: recentResults, loading: loadingResults } = useResults(3);
+
   return (
     <div className="max-w-[1920px] mx-auto p-4 lg:p-6">
       <div className="flex flex-col lg:flex-row gap-6">
@@ -22,7 +28,7 @@ export default function HomePage() {
               <div className="flex flex-col lg:flex-row gap-4 justify-between items-start mb-6">
                 <div>
                   <h1 className="text-2xl font-semibold text-gray-800">
-                    Welcome back, Ugochukwu
+                    Welcome back, {user?.displayName?.split(' ')[0] || 'User'}
                   </h1>
                   <p className="text-gray-600 mt-1">
                     Here's what's happening with your health monitoring
@@ -38,7 +44,7 @@ export default function HomePage() {
                   className="p-4 rounded-xl bg-white border hover:border-blue-500 transition-all duration-200 text-left group"
                 >
                   <div className="bg-blue-100 text-blue-600 p-2 rounded-lg w-fit">
-                    <Calendar className="h-5 w-5" />
+                    <Image src="/calendar.png" alt="Schedule" width={20} height={20} className="w-5 h-5" />
                   </div>
                   <h3 className="font-semibold mt-3 text-gray-800 group-hover:text-blue-500">
                     Schedule Test
@@ -52,7 +58,7 @@ export default function HomePage() {
                   className="p-4 rounded-xl bg-white border hover:border-blue-500 transition-all duration-200 text-left group"
                 >
                   <div className="bg-green-100 text-green-600 p-2 rounded-lg w-fit">
-                    <FileText className="h-5 w-5" />
+                    <Image src="/result.png" alt="Results" width={20} height={20} className="w-5 h-5" />
                   </div>
                   <h3 className="font-semibold mt-3 text-gray-800 group-hover:text-blue-500">
                     View Results
@@ -66,7 +72,7 @@ export default function HomePage() {
                   className="p-4 rounded-xl bg-white border hover:border-blue-500 transition-all duration-200 text-left group"
                 >
                   <div className="bg-purple-100 text-purple-600 p-2 rounded-lg w-fit">
-                    <Building2 className="h-5 w-5" />
+                    <Image src="/find_lab.png" alt="Find Lab" width={20} height={20} className="w-5 h-5" />
                   </div>
                   <h3 className="font-semibold mt-3 text-gray-800 group-hover:text-blue-500">
                     Find Lab
@@ -115,20 +121,27 @@ export default function HomePage() {
                   </Link>
                 </div>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 rounded-lg border hover:border-blue-500 cursor-pointer">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-green-100 p-2 rounded-lg">
-                        <FileText className="h-5 w-5 text-green-600" />
+                  {loadingResults ? (
+                    <p className="text-sm text-gray-500 text-center p-4">Loading results...</p>
+                  ) : recentResults.length > 0 ? (
+                    recentResults.map((result) => (
+                      <div key={result.id} className="flex items-center justify-between p-3 rounded-lg border hover:border-blue-500 cursor-pointer">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-green-100 p-2 rounded-lg">
+                            <FileText className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div>
+                            <h1 className="font-medium text-green-600">
+                              {result.labName}
+                            </h1>
+                            <p className="text-sm text-gray-600">{result.date}</p>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h1 className="font-medium text-green-600">
-                          Marvel Labs
-                        </h1>
-                        <h3 className="font-medium text-gray-800"></h3>
-                        <p className="text-sm text-gray-600">2025-02-11</p>
-                      </div>
-                    </div>
-                  </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500 text-center p-4">No recent results found.</p>
+                  )}
                 </div>
               </div>
             </div>

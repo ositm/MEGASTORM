@@ -56,7 +56,7 @@ export default function AppSidebar({ sidebarOpen, setSidebarOpen }: AppSidebarPr
       >
         <div className="hidden lg:flex items-center gap-2 p-4 border-b">
           <Image
-            src="/lab-link-logo.png"
+            src="/lab-link-logo.jpg"
             alt="logo"
             width={50}
             height={50}
