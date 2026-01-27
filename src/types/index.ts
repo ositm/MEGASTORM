@@ -18,6 +18,7 @@ export interface LabTest {
     price: number;
     description?: string;
     testId?: string; // Reference to MedicalTest
+    category?: string;
 }
 
 // Test package/bundle
@@ -54,6 +55,8 @@ export interface Lab {
     types?: string[];
     distance?: number; // Distance in km from user location
     availableTestIds?: string[]; // Array of test IDs for efficient querying
+    phone_number?: string;
+    formatted_address?: string;
 }
 
 export interface Booking {

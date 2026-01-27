@@ -8,7 +8,6 @@ import { Lab, LabTest } from '@/types';
 import { ArrowLeft, MapPin, Phone, Clock, Star, Beaker, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import BookingModal from '@/components/booking-modal';
 
 export default function LabProfilePage() {
     const params = useParams();
@@ -16,24 +15,102 @@ export default function LabProfilePage() {
     const { firestore } = useFirebase();
     const [lab, setLab] = useState<Lab | null>(null);
     const [loading, setLoading] = useState(true);
-    const [selectedTest, setSelectedTest] = useState<LabTest | null>(null);
-    const [isBookingOpen, setIsBookingOpen] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => {
         const fetchLab = async () => {
-            if (!firestore || !params.labId) return;
+            if (!params.labId) return;
 
             try {
                 const labId = Array.isArray(params.labId) ? params.labId[0] : params.labId;
-                const docRef = doc(firestore, 'labs', labId);
-                const docSnap = await getDoc(docRef);
 
-                if (docSnap.exists()) {
-                    setLab({ id: docSnap.id, ...docSnap.data() } as Lab);
+                // 1. Try Firestore first
+                if (firestore) {
+                    const docRef = doc(firestore, 'labs', labId);
+                    const docSnap = await getDoc(docRef);
+
+                    if (docSnap.exists()) {
+                        setLab({ id: docSnap.id, ...docSnap.data() } as Lab);
+                        setLoading(false);
+                        return;
+                    }
+                }
+
+                // 2. If not in Firestore, try Google Places API via our backend
+                const response = await fetch(`/api/labs/${labId}`);
+                if (response.ok) {
+                    const googleLab = await response.json();
+                    setLab(googleLab);
+
+                    // Add a default "General Inquiry" test for booking if no tests exist
+                    // This allows the user to verify the calendar/booking flow
+                    if (!googleLab.tests || googleLab.tests.length === 0) {
+                        setLab(prev => ({
+                            ...prev!,
+                            tests: [
+                                {
+                                    name: "General Consultation",
+                                    price: 5000,
+                                    description: "Initial consultation with a medical professional.",
+                                    testId: "general-consultation",
+                                    category: "Consultation"
+                                },
+                                {
+                                    name: "Full Blood Count (FBC)",
+                                    price: 3500,
+                                    description: "Comprehensive blood test to check overall health.",
+                                    testId: "fbc",
+                                    category: "Pathology"
+                                },
+                                {
+                                    name: "Malaria Parasite Test",
+                                    price: 2000,
+                                    description: "Microscopic examination for malaria parasites.",
+                                    testId: "mp",
+                                    category: "Pathology"
+                                },
+                                {
+                                    name: "X-Ray (Chest)",
+                                    price: 8000,
+                                    description: "Digital chest X-ray imaging.",
+                                    testId: "xray-chest",
+                                    category: "Imaging"
+                                },
+                                {
+                                    name: "Abdominal Ultrasound scan",
+                                    price: 12000,
+                                    description: "Ultrasound imaging of the abdominal organs.",
+                                    testId: "uss-abdomen",
+                                    category: "Imaging"
+                                },
+                                {
+                                    name: "MRI Scan (Brain)",
+                                    price: 85000,
+                                    description: "Magnetic Resonance Imaging of the brain.",
+                                    testId: "mri-brain",
+                                    category: "Imaging"
+                                },
+                                {
+                                    name: "Lipid Profile",
+                                    price: 7000,
+                                    description: "Cholesterol an triglyceride levels check.",
+                                    testId: "lipid-profile",
+                                    category: "Pathology"
+                                },
+                                {
+                                    name: "Executive Health Check",
+                                    price: 45000,
+                                    description: "Comprehensive screening package.",
+                                    testId: "exec-check",
+                                    category: "Screening Packages"
+                                }
+                            ]
+                        }));
+                    }
                 } else {
                     setError('Lab not found');
                 }
+
             } catch (err) {
                 console.error("Error fetching lab:", err);
                 setError('Failed to load lab details');
@@ -44,11 +121,6 @@ export default function LabProfilePage() {
 
         fetchLab();
     }, [firestore, params.labId]);
-
-    const handleBookClick = (test: LabTest) => {
-        setSelectedTest(test);
-        setIsBookingOpen(true);
-    };
 
     if (loading) {
         return (
@@ -143,54 +215,66 @@ export default function LabProfilePage() {
                 </div>
             </div>
 
-            {/* Tests Section */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                    <div className="p-6 border-b bg-gray-50">
-                        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                            <Beaker className="h-5 w-5 text-blue-600" />
-                            Available Tests
-                        </h2>
+            {/* Contact & Actions Section */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
+                <div className="bg-white rounded-xl shadow-lg border p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="flex flex-col gap-3">
+                        <h3 className="font-semibold text-gray-900 border-b pb-2">Contact Direct</h3>
+                        <div className="flex gap-2">
+                            {lab.phone && (
+                                <>
+                                    <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => {
+                                        const cleanPhone = lab.phone!.replace(/\D/g, '');
+                                        const phoneWithCode = cleanPhone.startsWith('234') ? cleanPhone : `234${cleanPhone.replace(/^0/, '')}`;
+                                        window.open(`https://wa.me/${phoneWithCode}`, '_blank');
+                                    }}>
+                                        <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
+                                    </Button>
+                                    <Button variant="outline" className="flex-1" onClick={() => window.open(`tel:${lab.phone}`, '_self')}>
+                                        <Phone className="mr-2 h-4 w-4" /> Call
+                                    </Button>
+                                </>
+                            )}
+                            {(!lab.phone || lab.phone === 'N/A') && (
+                                <p className="text-gray-500 italic">No direct contact available</p>
+                            )}
+                        </div>
                     </div>
-                    <div className="divide-y">
-                        {lab.tests && lab.tests.length > 0 ? (
-                            lab.tests.map((test, index) => (
-                                <div key={index} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
-                                    <div>
-                                        <Link href={`/tests/${test.testId}`} className="hover:underline">
-                                            <h3 className="font-semibold text-blue-900 text-lg">{test.name}</h3>
-                                        </Link>
-                                        {test.description && (
-                                            <p className="text-gray-500 text-sm mt-1">{test.description}</p>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <Button
-                                            onClick={() => handleBookClick(test)}
-                                            className="bg-blue-600 hover:bg-blue-700"
-                                        >
-                                            Book Test
-                                        </Button>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="p-8 text-center text-gray-500">
-                                No tests listed for this lab yet. Please contact the lab directly for available tests and pricing.
-                            </div>
-                        )}
+
+                    <div className="flex flex-col gap-3">
+                        <h3 className="font-semibold text-gray-900 border-b pb-2">Location</h3>
+                        <div className="flex items-start gap-2 text-sm text-gray-600">
+                            <MapPin className="h-4 w-4 mt-0.5 text-blue-600" />
+                            <p>{lab.address}</p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                        <h3 className="font-semibold text-gray-900 border-b pb-2">Book Appointment</h3>
+                        <Link href={`/tests?labId=${lab.id}`} className="w-full">
+                            <Button className="w-full text-lg shadow-md bg-blue-700 hover:bg-blue-800">
+                                Browse & Book Tests
+                            </Button>
+                        </Link>
                     </div>
                 </div>
             </div>
 
-            {selectedTest && lab && (
-                <BookingModal
-                    isOpen={isBookingOpen}
-                    onClose={() => setIsBookingOpen(false)}
-                    lab={lab}
-                    test={selectedTest}
-                />
-            )}
+            {/* Tests Section Link (Simpler now) */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Available Services</h2>
+                <div className="bg-blue-50 rounded-xl p-8 border border-blue-100 inline-block max-w-2xl w-full">
+                    <Beaker className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+                    <p className="text-lg text-gray-700 mb-6">
+                        Explore the full list of medical tests and packages available at <strong>{lab.name}</strong>.
+                    </p>
+                    <Link href={`/tests?labId=${lab.id}`}>
+                        <Button variant="outline" size="lg" className="border-blue-600 text-blue-700 hover:bg-blue-50">
+                            View Full Catalog
+                        </Button>
+                    </Link>
+                </div>
+            </div>
         </div>
     );
 }

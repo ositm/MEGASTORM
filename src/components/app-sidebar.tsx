@@ -19,7 +19,7 @@ const mainNav = [
 ];
 
 const otherNav = [
-  { href: '/support', icon: '/faq.png', label: 'Support & FAQs' },
+  { href: '/waiting-list', icon: '/faq.png', label: 'Support & FAQs' },
 ];
 
 interface AppSidebarProps {
@@ -117,20 +117,30 @@ export default function AppSidebar({ sidebarOpen, setSidebarOpen }: AppSidebarPr
                 </Link>
               ))}
               {(profile?.role === 'lab_admin' || profile?.role === 'admin') && (
-                <Link
-                  href="/admin/dashboard"
-                  className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-primary transition-colors"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <Image
-                    src="/dashboard.png"
-                    alt="Lab Terminal"
-                    width={24}
-                    height={24}
-                    className="w-6 h-6"
-                  />
-                  <span className="text-sm">Lab Terminal</span>
-                </Link>
+                <>
+                  <Link
+                    href="/admin/dashboard"
+                    className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-primary transition-colors"
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <Image
+                      src="/dashboard.png"
+                      alt="Lab Terminal"
+                      width={24}
+                      height={24}
+                      className="w-6 h-6"
+                    />
+                    <span className="text-sm">Lab Terminal</span>
+                  </Link>
+                  <Link
+                    href="/partner/dashboard"
+                    className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-primary transition-colors"
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <span className="w-6 h-6 flex items-center justify-center bg-blue-100 rounded text-blue-700 font-bold text-xs">LP</span>
+                    <span className="text-sm">Partner Portal</span>
+                  </Link>
+                </>
               )}
             </div>
           </div>

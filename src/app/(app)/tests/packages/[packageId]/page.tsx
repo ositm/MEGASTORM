@@ -9,6 +9,10 @@ import { ArrowLeft, CheckCircle2, Info, Package, ShieldCheck } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
+import { DEFAULT_PACKAGES, DEFAULT_TESTS } from '@/data/default-tests';
+
+// ... (imports remain)
+
 export default function PackageDetailPage() {
     const params = useParams();
     const router = useRouter();
@@ -20,44 +24,55 @@ export default function PackageDetailPage() {
 
     useEffect(() => {
         const fetchPackageDetails = async () => {
-            if (!firestore || !params.packageId) return;
-
             const packageId = Array.isArray(params.packageId) ? params.packageId[0] : params.packageId;
+            if (!packageId) return;
 
-            try {
-                // 1. Fetch Package Details
-                const pkgRef = doc(firestore, 'testPackages', packageId);
-                const pkgSnap = await getDoc(pkgRef);
+            // Default fallback
+            const defaultPkg = DEFAULT_PACKAGES.find(p => p.id === packageId);
+            let foundPkg: TestPackage | null = defaultPkg || null;
+            let foundTests: MedicalTest[] = [];
 
-                if (!pkgSnap.exists()) {
-                    setError('Package not found');
-                    setLoading(false);
-                    return;
+            if (firestore) {
+                try {
+                    // 1. Fetch Package Details
+                    const pkgRef = doc(firestore, 'testPackages', packageId);
+                    const pkgSnap = await getDoc(pkgRef);
+
+                    if (pkgSnap.exists()) {
+                        foundPkg = { id: pkgSnap.id, ...pkgSnap.data() } as TestPackage;
+                    }
+
+                    // 2. Fetch Included Tests Details
+                    if (foundPkg && foundPkg.tests && foundPkg.tests.length > 0) {
+                        const testsPromises = foundPkg.tests.map(testId =>
+                            getDoc(doc(firestore, 'labTests', testId))
+                        );
+
+                        const testsSnaps = await Promise.all(testsPromises);
+                        foundTests = testsSnaps
+                            .filter(snap => snap.exists())
+                            .map(snap => ({ id: snap.id, ...snap.data() } as MedicalTest));
+                    }
+
+                } catch (err) {
+                    console.error("Error fetching package details:", err);
                 }
-
-                const packageData = { id: pkgSnap.id, ...pkgSnap.data() } as TestPackage;
-                setPkg(packageData);
-
-                // 2. Fetch Included Tests Details
-                if (packageData.tests && packageData.tests.length > 0) {
-                    const testsPromises = packageData.tests.map(testId =>
-                        getDoc(doc(firestore, 'labTests', testId))
-                    );
-
-                    const testsSnaps = await Promise.all(testsPromises);
-                    const testsData = testsSnaps
-                        .filter(snap => snap.exists())
-                        .map(snap => ({ id: snap.id, ...snap.data() } as MedicalTest));
-
-                    setIncludedTests(testsData);
-                }
-
-            } catch (err) {
-                console.error("Error fetching package details:", err);
-                setError('Failed to load package information');
-            } finally {
-                setLoading(false);
             }
+
+            // Fallback for tests if not found in Firestore or if Firestore failed
+            if (foundPkg && foundTests.length === 0 && foundPkg.tests.length > 0) {
+                foundTests = foundPkg.tests.map(testId =>
+                    DEFAULT_TESTS.find(t => t.id === testId)
+                ).filter(Boolean) as MedicalTest[];
+            }
+
+            if (foundPkg) {
+                setPkg(foundPkg);
+                setIncludedTests(foundTests);
+            } else {
+                setError('Package not found');
+            }
+            setLoading(false);
         };
 
         fetchPackageDetails();
@@ -117,7 +132,7 @@ export default function PackageDetailPage() {
                         </div>
 
                         <div className="bg-blue-50 rounded-xl p-6 border border-blue-100 min-w-[300px]">
-                            <Button className="w-full text-lg py-6">
+                            <Button className="w-full text-lg py-6" onClick={() => router.push(`/find-a-lab?packageId=${pkg.id}`)}>
                                 Book This Package
                             </Button>
                             <p className="text-xs text-center text-gray-500 mt-3">

@@ -110,7 +110,7 @@ export function SignInForm() {
       }
       // Let the useEffect handle the redirect
     } catch (error: any) {
-      setError(error.message);
+      setError(`Google Sign-In failed: ${error.code} - ${error.message}`);
       console.error('Google Sign-In Error:', error);
     }
   };

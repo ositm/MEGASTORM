@@ -4,15 +4,10 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const city = searchParams.get('city');
     const state = searchParams.get('state');
+    const lat = searchParams.get('lat');
+    const lng = searchParams.get('lng');
 
-    if (!city || !state) {
-        return NextResponse.json(
-            { error: 'City and state are required' },
-            { status: 400 }
-        );
-    }
-
-    const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+    const apiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
     if (!apiKey) {
         return NextResponse.json(
@@ -22,31 +17,50 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // Using Google Places API (New) - Text Search
-        const query = `medical laboratory diagnostic center in ${city}, ${state}, Nigeria`;
+        let endpoint = 'https://places.googleapis.com/v1/places:searchText';
+        let body: any = {
+            languageCode: 'en',
+            maxResultCount: 20,
+        };
 
-        const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        if (lat && lng) {
+            // Near Me Search
+            // We use searchText with "medical laboratory" and bias towards the user's location
+            // Using rankPreference="DISTANCE" would be ideal but requires strict location handling
+            // For now, we'll use locationBias with a tighter radius
+            body.textQuery = "medical laboratory";
+            body.locationBias = {
+                circle: {
+                    center: {
+                        latitude: parseFloat(lat),
+                        longitude: parseFloat(lng)
+                    },
+                    radius: 5000.0 // 5km radius bias
+                }
+            };
+        } else if (state) {
+            // City/State Search
+            // If city is missing, search in the whole state
+            const locationString = city ? `${city}, ${state}, Nigeria` : `${state}, Nigeria`;
+            body.textQuery = `medical laboratory diagnostic center in ${locationString}`;
+
+            // Remove locationBias as textQuery is specific enough and large radius causes 400 error
+
+        } else {
+            return NextResponse.json(
+                { error: 'Either city/state OR lat/lng must be provided' },
+                { status: 400 }
+            );
+        }
+
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Goog-Api-Key': apiKey,
-                'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.types'
+                'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.businessStatus'
             },
-            body: JSON.stringify({
-                textQuery: query,
-                languageCode: 'en',
-                maxResultCount: 20,
-                locationBias: {
-                    circle: {
-                        center: {
-                            // Nigeria's approximate center
-                            latitude: 9.0820,
-                            longitude: 8.6753
-                        },
-                        radius: 500000.0 // 500km radius
-                    }
-                }
-            })
+            body: JSON.stringify(body)
         });
 
         if (!response.ok) {
@@ -65,8 +79,8 @@ export async function GET(request: NextRequest) {
             id: place.id,
             name: place.displayName?.text || 'Unknown Lab',
             address: place.formattedAddress || '',
-            city: city,
-            state: state,
+            city: city || '', // Might not matches exactly if searching by state, but mostly for UI
+            state: state || '',
             phone: place.nationalPhoneNumber || place.internationalPhoneNumber || 'N/A',
             email: '', // Google Places doesn't provide email
             latitude: place.location?.latitude || 0,
@@ -75,7 +89,6 @@ export async function GET(request: NextRequest) {
             reviewCount: place.userRatingCount || 0,
             website: place.websiteUri || '',
             googleMapsUrl: place.googleMapsUri || '',
-            types: place.types || [],
             tests: [] // Will be populated separately if needed
         }));
 

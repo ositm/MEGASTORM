@@ -1,8 +1,11 @@
 'use client';
 
+import { DEFAULT_TESTS, DEFAULT_PACKAGES } from '@/data/default-tests';
+
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useFirebase } from '@/firebase/provider';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import { MedicalTest, TestPackage } from '@/types';
 import { Search, Beaker, Package, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +13,7 @@ import Link from 'next/link';
 
 const categories = [
     'All',
+    'Imaging',
     'Haematology',
     'Clinical Chemistry',
     'Microbiology',
@@ -35,38 +39,94 @@ export default function TestsPage() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'tests' | 'packages'>('packages');
 
+    const searchParams = useSearchParams();
+    const labId = searchParams.get('labId');
+    const [lab, setLab] = useState<any | null>(null);
+
     useEffect(() => {
         const fetchData = async () => {
-            if (!firestore) return;
+            setLoading(true);
+            // Default to our hardcoded data initially
+            let loadedTests = DEFAULT_TESTS;
+            let loadedPackages = DEFAULT_PACKAGES;
 
-            try {
-                // Fetch tests
-                const testsQuery = query(collection(firestore, 'labTests'), orderBy('name'));
-                const testsSnapshot = await getDocs(testsQuery);
-                const testsData = testsSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as MedicalTest[];
-                setTests(testsData);
-                setFilteredTests(testsData);
+            // Fetch Lab if labId is present
+            let currentLab: any = null;
+            if (labId) {
+                if (firestore) {
+                    try {
+                        const labRef = doc(firestore, 'labs', labId);
+                        const labSnap = await getDoc(labRef);
+                        if (labSnap.exists()) {
+                            currentLab = { id: labSnap.id, ...labSnap.data() };
+                        }
+                    } catch (e) {
+                        console.error("Error fetching lab", e);
+                    }
+                }
 
-                // Fetch packages
-                const packagesQuery = query(collection(firestore, 'testPackages'));
-                const packagesSnapshot = await getDocs(packagesQuery);
-                const packagesData = packagesSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as TestPackage[];
-                setPackages(packagesData);
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            } finally {
-                setLoading(false);
+                // Fallback / Mock for lab if not found or no firestore (for demo consistency)
+                if (!currentLab) {
+                    // Try to find in our mock labs if we had them, OR just generic fallback name
+                    // For now, we rely on firestore or just show generic if failed
+                }
+                setLab(currentLab);
             }
+
+            if (firestore) {
+                try {
+                    // Fetch tests
+                    const testsQuery = query(collection(firestore, 'labTests'), orderBy('name'));
+                    const testsSnapshot = await getDocs(testsQuery);
+                    const testsData = testsSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })) as MedicalTest[];
+
+                    if (testsData.length > 0) {
+                        loadedTests = testsData;
+                    }
+
+                    // Fetch packages
+                    const packagesQuery = query(collection(firestore, 'testPackages'));
+                    const packagesSnapshot = await getDocs(packagesQuery);
+                    const packagesData = packagesSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })) as TestPackage[];
+
+                    if (packagesData.length > 0) {
+                        loadedPackages = packagesData;
+                    }
+                } catch (error) {
+                    console.error('Error fetching data, using defaults:', error);
+                }
+            }
+
+            // Filter by Lab if applicable
+            if (currentLab && currentLab.availableTestIds) {
+                loadedTests = loadedTests.filter(t => currentLab.availableTestIds.includes(t.id));
+                // Note: Packages might not be strictly linked in this simple data model, 
+                // but we could filter if we had package IDs in the lab.
+                // For now, let's show all packages or assumption is they are generic.
+                // Or better: Filter strictly? Let's filter tests strictly.
+            } else if (currentLab && currentLab.tests) {
+                // If lab has explicit 'tests' array (from Google Places or custom structure), use that to find matches
+                // This is fuzzy matching if IDs don't align, but let's try ID match first
+                const labTestIds = currentLab.tests.map((t: any) => t.testId).filter(Boolean);
+                if (labTestIds.length > 0) {
+                    loadedTests = loadedTests.filter(t => labTestIds.includes(t.id));
+                }
+            }
+
+            setTests(loadedTests);
+            setPackages(loadedPackages);
+            setFilteredTests(loadedTests);
+            setLoading(false);
         };
 
         fetchData();
-    }, [firestore]);
+    }, [firestore, labId]);
 
     useEffect(() => {
         let filtered = tests;
@@ -102,6 +162,16 @@ export default function TestsPage() {
             {/* Hero Section */}
             <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    {lab ? (
+                        <div className="mb-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg inline-flex items-center gap-4 border border-white/20">
+                            <span className="font-medium">Showing tests available at <strong>{lab.name}</strong></span>
+                            <Link href="/tests">
+                                <Button variant="ghost" size="sm" className="text-white hover:bg-white/20 h-8">
+                                    Clear Filter
+                                </Button>
+                            </Link>
+                        </div>
+                    ) : null}
                     <h1 className="text-4xl font-bold mb-4">Medical Test Catalog</h1>
                     <p className="text-xl text-blue-100 mb-8">
                         Browse our comprehensive catalog of medical tests and packages
@@ -170,11 +240,7 @@ export default function TestsPage() {
                                             <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6 cursor-pointer border-2 border-blue-100">
                                                 <div className="flex items-start justify-between mb-4">
                                                     <div className="text-4xl">{pkg.icon}</div>
-                                                    {pkg.discount > 0 && (
-                                                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                                                            {pkg.discount}% OFF
-                                                        </span>
-                                                    )}
+                                                    {/* Discount badge removed */}
                                                 </div>
                                                 <h3 className="text-xl font-bold text-gray-900 mb-2">{pkg.name}</h3>
                                                 <p className="text-gray-600 text-sm mb-4">{pkg.description}</p>
@@ -200,11 +266,7 @@ export default function TestsPage() {
                                         <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6 cursor-pointer">
                                             <div className="flex items-start justify-between mb-4">
                                                 <div className="text-4xl">{pkg.icon}</div>
-                                                {pkg.discount > 0 && (
-                                                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                                                        {pkg.discount}% OFF
-                                                    </span>
-                                                )}
+                                                {/* Discount badge removed */}
                                             </div>
                                             <h3 className="text-xl font-bold text-gray-900 mb-2">{pkg.name}</h3>
                                             <p className="text-gray-600 text-sm mb-4 line-clamp-2">{pkg.description}</p>
@@ -256,7 +318,7 @@ export default function TestsPage() {
                         {filteredTests.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {filteredTests.map(test => (
-                                    <Link key={test.id} href={`/tests/${test.id}`}>
+                                    <Link key={test.id} href={`/tests/${test.id}${labId ? `?labId=${labId}` : ''}`}>
                                         <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6 cursor-pointer">
                                             <div className="flex items-start justify-between mb-3">
                                                 <Beaker className="h-8 w-8 text-blue-600" />
