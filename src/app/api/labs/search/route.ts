@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     const minRating = parseFloat(searchParams.get('rating') || '0');
     const pageToken = searchParams.get('pageToken');
 
-    const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const GOOGLE_PLACES_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
     if (!GOOGLE_PLACES_API_KEY) {
         return NextResponse.json({ error: 'Server configuration error: Missing API Key' }, { status: 500 });
