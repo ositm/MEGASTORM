@@ -2,10 +2,8 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   eslint: {
+    // Lint debt is tracked separately; type errors DO fail the build.
     ignoreDuringBuilds: true,
   },
   images: {

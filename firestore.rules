@@ -1,48 +1,139 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check ownership
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+
+    // ---------- Helpers ----------
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    // Labs: Public read
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Role lives on the user document. Self-modification of role/labId is
+    // blocked below, and grants are performed with the Admin SDK (scripts),
+    // which bypasses these rules.
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userDoc().role == 'admin';
+    }
+
+    function isLabAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userDoc().role == 'lab_admin';
+    }
+
+    function isLabAdminFor(labId) {
+      return isLabAdmin() && userDoc().labId == labId;
+    }
+
+    // ---------- Users ----------
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      // New accounts may only be created for yourself, as a plain user.
+      allow create: if isOwner(userId)
+        && (!('role' in request.resource.data) || request.resource.data.role == 'user')
+        && !('labId' in request.resource.data);
+      // Owners may edit their profile but never their own role or lab binding.
+      allow update: if isAdmin()
+        || (isOwner(userId)
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'labId']));
+      allow delete: if isAdmin();
+    }
+
+    // ---------- Labs & catalog (public read, admin-managed) ----------
     match /labs/{labId} {
       allow read: if true;
-      allow write: if request.auth != null; // Restrict this in production!
+      allow update: if isAdmin() || isLabAdminFor(labId);
+      allow create, delete: if isAdmin();
     }
 
-    // Bookings: Authenticated
+    match /labTests/{testId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /testPackages/{packageId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ---------- Bookings ----------
     match /bookings/{bookingId} {
-      allow create: if request.auth != null;
-      allow read, update: if request.auth != null; // Simplified for now
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow read: if isOwner(resource.data.userId)
+        || isLabAdminFor(resource.data.labId)
+        || isAdmin();
+      allow update: if isLabAdminFor(resource.data.labId) || isAdmin();
+      allow delete: if isAdmin();
     }
 
-    // Users: Owner only
-    match /users/{userId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    // Results: Owner only (or admin)
+    // ---------- Results ----------
     match /results/{resultId} {
-      allow read, write: if request.auth != null; // Simplified for debugging
+      allow create: if isSignedIn()
+        && (request.resource.data.userId == request.auth.uid
+            || isLabAdminFor(request.resource.data.labId)
+            || isAdmin());
+      allow read: if isOwner(resource.data.userId)
+        || isLabAdminFor(resource.data.labId)
+        || isAdmin();
+      // Owner updates cover AI-analysis status writes from the patient app.
+      allow update: if isOwner(resource.data.userId)
+        || isLabAdminFor(resource.data.labId)
+        || isAdmin();
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
     }
 
-    // Notifications: Owner only
+    // ---------- Notifications ----------
     match /notifications/{notificationId} {
-      allow read, write: if request.auth != null; // Simplified for debugging
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      // Users may only mark their own notifications as read.
+      allow update: if isOwner(resource.data.userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow create: if isLabAdmin() || isAdmin();
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
     }
 
-    // Reminders: Owner only
+    // ---------- Reminders ----------
     match /reminders/{reminderId} {
       allow read: if isOwner(resource.data.userId);
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isOwner(resource.data.userId);
     }
-    
-    // Lab Tests & Packages: Public read
-    match /labTests/{testId} { allow read: if true; allow write: if request.auth != null; }
-    match /testPackages/{packageId} { allow read: if true; allow write: if request.auth != null; }
+
+    // ---------- Lab ownership claims ----------
+    match /lab_claims/{claimId} {
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // ---------- Public waiting list (write-only drop box) ----------
+    match /waitingList/{entryId} {
+      allow create: if request.resource.data.keys().hasOnly(['name', 'email', 'message', 'type', 'createdAt'])
+        && request.resource.data.email is string
+        && request.resource.data.email.size() < 200
+        && request.resource.data.name is string
+        && request.resource.data.name.size() < 200
+        && request.resource.data.message is string
+        && request.resource.data.message.size() < 5000;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ---------- Everything else: denied ----------
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }

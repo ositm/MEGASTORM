@@ -30,7 +30,7 @@ function MapUpdater({ center, zoom, labs, userLocation }: { center: { lat: numbe
                     bounds.extend({ lat: lab.latitude, lng: lab.longitude });
                 }
             });
-            map.fitBounds(bounds, { padding: 50 });
+            map.fitBounds(bounds, 50);
         } else {
             map.setCenter(center);
             map.setZoom(zoom);

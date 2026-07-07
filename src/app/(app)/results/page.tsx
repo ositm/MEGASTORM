@@ -11,10 +11,9 @@ import { format } from 'date-fns';
 import PDFViewer from '@/components/pdf-viewer';
 import { TestResult } from '@/types';
 import { useFirebase, useStorage, useFirestore } from '@/firebase/FirebaseProvider';
-import { ref, uploadBytes, getDownloadURL, uploadBytesResumable, getStorage, uploadString } from 'firebase/storage';
+import { ref, getDownloadURL, uploadString } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, updateDoc, doc, Timestamp, deleteDoc } from 'firebase/firestore';
-import { deleteObject } from 'firebase/storage';
-import { useRef, useMemo } from 'react';
+import { useRef } from 'react';
 import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -26,9 +25,8 @@ export default function TestResultsPage() {
     const [currentAnalysis, setCurrentAnalysis] = useState('');
     const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
 
-    const { user, firebaseApp } = useFirebase();
-    // HARDCODED BUCKET URL TO ENSURE CORRECTNESS
-    const storage = useMemo(() => firebaseApp ? getStorage(firebaseApp, "gs://lablink-df67e.firebasestorage.app") : null, [firebaseApp]);
+    const { user } = useFirebase();
+    const storage = useStorage();
     const firestore = useFirestore();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
@@ -73,9 +71,9 @@ export default function TestResultsPage() {
                 if (!dataURL) return;
 
                 try {
-                    // Create a reference to the file in Firebase Storage
-                    // Use simple path first
-                    const storageRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
+                    // Files are scoped by owner uid so storage rules can
+                    // enforce that patients only touch their own results.
+                    const storageRef = ref(storage, `results/${user.uid}/${Date.now()}_${file.name}`);
 
                     // Upload using uploadString (Base64) - Robust client-side method
                     const snapshot = await uploadString(storageRef, dataURL, 'data_url');
@@ -123,7 +121,7 @@ export default function TestResultsPage() {
     };
 
     const handleAnalyze = async (result: TestResult) => {
-        if (!firestore) return;
+        if (!firestore || !user) return;
 
         const analyzeToastId = toast.loading('Analyzing result...');
         setAnalyzingIds(prev => new Set(prev).add(result.id));
@@ -134,9 +132,13 @@ export default function TestResultsPage() {
                 aiSummary: 'Analyzing...'
             });
 
+            const idToken = await user.getIdToken();
             const response = await fetch('/api/results/analyze', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
                 body: JSON.stringify({ fileUrl: result.fileUrl }),
             });
 

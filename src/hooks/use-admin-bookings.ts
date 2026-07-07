@@ -46,7 +46,7 @@ export function useAdminBookings() {
                     ...data,
                     date: data.date?.toDate ? data.date.toDate().toLocaleDateString() : data.date,
                     createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt
-                } as AdminBooking;
+                } as unknown as AdminBooking;
             });
 
             // Sort client-side

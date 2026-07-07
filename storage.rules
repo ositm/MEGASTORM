@@ -1,8 +1,44 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Role is read from Firestore (cross-service rules). Lab staff upload
+    // result files into the owning patient's folder.
+    function isLabStaff() {
+      return isSignedIn()
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['lab_admin', 'admin'];
+    }
+
+    function isValidResultFile() {
+      return request.resource.size < 10 * 1024 * 1024
+        && (request.resource.contentType == 'application/pdf'
+            || request.resource.contentType.matches('image/.*'));
+    }
+
+    // Patient result files, scoped by owner uid.
+    match /results/{userId}/{fileName} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isLabStaff());
+      allow create, update: if isSignedIn()
+        && (request.auth.uid == userId || isLabStaff())
+        && isValidResultFile();
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isLabStaff());
+    }
+
+    // Legacy self-upload path (pre-hardening files). Read-only; existing
+    // documents keep working via their tokened download URLs.
+    match /uploads/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // Everything else: denied.
     match /{allPaths=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }
