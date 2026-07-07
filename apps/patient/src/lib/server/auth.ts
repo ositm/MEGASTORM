@@ -1,16 +1,7 @@
-import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
 import { NextRequest } from 'next/server';
-import { firebaseConfig } from '@/firebase/config';
-
-// Token verification only needs the project id (signatures are checked against
-// Google's public certs), so no service-account credential is required here.
-function adminApp() {
-    if (!getApps().length) {
-        initializeApp({ projectId: firebaseConfig.projectId });
-    }
-    return getApps()[0];
-}
+import { ActorRole } from '@lablink/core';
+import { adminApp } from './firebase-admin';
 
 /**
  * Verifies the Firebase ID token from the Authorization: Bearer header.
@@ -27,4 +18,13 @@ export async function getAuthenticatedUser(req: NextRequest): Promise<DecodedIdT
         console.error('ID token verification failed:', e);
         return null;
     }
+}
+
+/** Role from custom claims; accounts without a role claim act as patients. */
+export function callerRole(decoded: DecodedIdToken): ActorRole {
+    const role = decoded.role;
+    if (role === 'admin' || role === 'lab_admin' || role === 'lab_staff' || role === 'collector') {
+        return role;
+    }
+    return 'patient';
 }
