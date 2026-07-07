@@ -1,0 +1,18 @@
+{
+  "name": "@lablink/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LabLink shared domain types and constants",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "firebase": "^11.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
