@@ -30,6 +30,9 @@ before(async () => {
         await db.collection('bookings').doc('bk-b-lab2').set({ userId: PATIENT_B, labId: 'LAB2', status: 'pending', testName: 'LFT' });
         await db.collection('results').doc('res-a').set({ userId: PATIENT_A, labId: 'LAB1', status: 'ready', fileUrl: 'x' });
         await db.collection('reminders').doc('rem-a').set({ userId: PATIENT_A, title: 'take sample' });
+        await db.collection('orders').doc('ord-a').set({ patientId: PATIENT_A, labId: 'LAB1', status: 'ORDER_CREATED', amount: 5000 });
+        await db.collection('orders').doc('ord-a').collection('events').doc('ev-1')
+            .set({ type: 'ORDER_CREATED', patientId: PATIENT_A, labId: 'LAB1', prevEventId: null });
     });
 });
 
@@ -120,6 +123,24 @@ test('lab admin can create a result for their lab; not for another lab', async (
 test('reminders are owner-only', async () => {
     await assertSucceeds(patientA().collection('reminders').doc('rem-a').get());
     await assertFails(patientB().collection('reminders').doc('rem-a').get());
+});
+
+// ---------- orders (schema v2) ----------
+test('order and its custody events are readable by owner, owning lab, and admin only', async () => {
+    await assertSucceeds(patientA().collection('orders').doc('ord-a').get());
+    await assertSucceeds(patientA().collection('orders').doc('ord-a').collection('events').doc('ev-1').get());
+    await assertSucceeds(lab1Admin().collection('orders').doc('ord-a').get());
+    await assertSucceeds(platformAdmin().collection('orders').doc('ord-a').collection('events').doc('ev-1').get());
+    await assertFails(patientB().collection('orders').doc('ord-a').get());
+    await assertFails(patientB().collection('orders').doc('ord-a').collection('events').doc('ev-1').get());
+});
+
+test('no client can write orders or custody events — not even admins', async () => {
+    await assertFails(patientA().collection('orders').add({ patientId: PATIENT_A, labId: 'LAB1', status: 'ORDER_CREATED' }));
+    await assertFails(patientA().collection('orders').doc('ord-a').update({ status: 'PAYMENT_CONFIRMED' }));
+    await assertFails(lab1Admin().collection('orders').doc('ord-a').update({ status: 'LAB_RECEIVED' }));
+    await assertFails(platformAdmin().collection('orders').doc('ord-a').collection('events').add({ type: 'CANCELLED' }));
+    await assertFails(patientA().collection('orders').doc('ord-a').collection('events').doc('ev-1').delete());
 });
 
 // ---------- catalog writes and unknown collections ----------

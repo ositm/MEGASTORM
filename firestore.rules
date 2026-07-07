@@ -77,6 +77,24 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ---------- Orders (schema v2) ----------
+    // Written exclusively by the server (Admin SDK bypasses these rules).
+    // Clients read their own slice; the events subcollection is the
+    // append-only chain of custody with patientId/labId denormalized on.
+    match /orders/{orderId} {
+      allow read: if isOwner(resource.data.patientId)
+        || isLabAdminFor(resource.data.labId)
+        || isAdmin();
+      allow write: if false;
+
+      match /events/{eventId} {
+        allow read: if isOwner(resource.data.patientId)
+          || isLabAdminFor(resource.data.labId)
+          || isAdmin();
+        allow write: if false;
+      }
+    }
+
     // ---------- Results ----------
     match /results/{resultId} {
       allow create: if isSignedIn()

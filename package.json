@@ -12,6 +12,7 @@
     "start": "npm run start -w @lablink/patient",
     "lint": "npm run lint -w @lablink/patient",
     "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm test --workspaces --if-present",
     "test:rules": "firebase emulators:exec --only firestore --project demo-lablink \"node --test packages/rules-tests/firestore.rules.test.mjs\"",
     "deploy:rules": "firebase deploy --only firestore:rules,storage --project lablink-df67e"
   },

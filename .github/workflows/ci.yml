@@ -22,6 +22,9 @@ jobs:
       - name: Typecheck (all workspaces)
         run: npm run typecheck
 
+      - name: Unit tests (all workspaces)
+        run: npm test
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

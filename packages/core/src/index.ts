@@ -1,5 +1,7 @@
 import { Timestamp } from 'firebase/firestore';
 
+export * from './orders';
+
 // Medical test from catalog
 export interface MedicalTest {
     id: string;
