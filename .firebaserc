@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "lablink-df67e",
+    "production": "lablink-df67e",
+    "staging": "lablink-staging"
+  }
+}
