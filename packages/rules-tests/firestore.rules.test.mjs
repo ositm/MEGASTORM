@@ -1,0 +1,134 @@
+// Firestore security rules tests. Run with:  npm run test:rules
+// (wraps `firebase emulators:exec` so FIRESTORE_EMULATOR_HOST is set)
+import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
+import { readFileSync } from 'fs';
+import { test, before, after } from 'node:test';
+
+/** @type {import('@firebase/rules-unit-testing').RulesTestEnvironment} */
+let env;
+
+const PATIENT_A = 'patient-a';
+const PATIENT_B = 'patient-b';
+
+const anon = () => env.unauthenticatedContext().firestore();
+const patientA = () => env.authenticatedContext(PATIENT_A).firestore();
+const patientB = () => env.authenticatedContext(PATIENT_B).firestore();
+const lab1Admin = () => env.authenticatedContext('lab1-admin', { role: 'lab_admin', labId: 'LAB1' }).firestore();
+const platformAdmin = () => env.authenticatedContext('root-admin', { role: 'admin' }).firestore();
+
+before(async () => {
+    env = await initializeTestEnvironment({
+        projectId: 'demo-lablink',
+        firestore: { rules: readFileSync('firestore.rules', 'utf8') },
+    });
+
+    await env.withSecurityRulesDisabled(async (ctx) => {
+        const db = ctx.firestore();
+        await db.collection('labs').doc('LAB1').set({ name: 'Alpha Lab' });
+        await db.collection('users').doc(PATIENT_A).set({ email: 'a@x.com', firstName: 'A', role: 'user' });
+        await db.collection('bookings').doc('bk-a-lab1').set({ userId: PATIENT_A, labId: 'LAB1', status: 'pending', testName: 'FBC' });
+        await db.collection('bookings').doc('bk-b-lab2').set({ userId: PATIENT_B, labId: 'LAB2', status: 'pending', testName: 'LFT' });
+        await db.collection('results').doc('res-a').set({ userId: PATIENT_A, labId: 'LAB1', status: 'ready', fileUrl: 'x' });
+        await db.collection('reminders').doc('rem-a').set({ userId: PATIENT_A, title: 'take sample' });
+    });
+});
+
+after(async () => {
+    await env.cleanup();
+});
+
+// ---------- public catalog ----------
+test('anonymous can read the labs catalog', async () => {
+    await assertSucceeds(anon().collection('labs').doc('LAB1').get());
+});
+
+test('anonymous cannot read bookings or results', async () => {
+    await assertFails(anon().collection('bookings').doc('bk-a-lab1').get());
+    await assertFails(anon().collection('results').doc('res-a').get());
+});
+
+// ---------- bookings ----------
+test('patient can create a pending booking for themselves', async () => {
+    await assertSucceeds(patientA().collection('bookings').add({ userId: PATIENT_A, labId: 'LAB1', status: 'pending' }));
+});
+
+test('patient cannot create a booking that skips the pending state', async () => {
+    await assertFails(patientA().collection('bookings').add({ userId: PATIENT_A, labId: 'LAB1', status: 'result_ready' }));
+});
+
+test('patient cannot create a booking for someone else', async () => {
+    await assertFails(patientA().collection('bookings').add({ userId: PATIENT_B, labId: 'LAB1', status: 'pending' }));
+});
+
+test('patient can read own booking but not another patient\'s', async () => {
+    await assertSucceeds(patientA().collection('bookings').doc('bk-a-lab1').get());
+    await assertFails(patientA().collection('bookings').doc('bk-b-lab2').get());
+});
+
+test('patient cannot update booking status', async () => {
+    await assertFails(patientA().collection('bookings').doc('bk-a-lab1').update({ status: 'confirmed' }));
+});
+
+test('lab admin can read and update bookings for their own lab only', async () => {
+    await assertSucceeds(lab1Admin().collection('bookings').doc('bk-a-lab1').get());
+    await assertSucceeds(lab1Admin().collection('bookings').doc('bk-a-lab1').update({ status: 'confirmed' }));
+    await assertFails(lab1Admin().collection('bookings').doc('bk-b-lab2').get());
+    await assertFails(lab1Admin().collection('bookings').doc('bk-b-lab2').update({ status: 'confirmed' }));
+});
+
+test('lab admin can list only their own lab\'s bookings', async () => {
+    await assertSucceeds(lab1Admin().collection('bookings').where('labId', '==', 'LAB1').get());
+    await assertFails(lab1Admin().collection('bookings').get());
+});
+
+test('platform admin can read any booking', async () => {
+    await assertSucceeds(platformAdmin().collection('bookings').doc('bk-b-lab2').get());
+});
+
+// ---------- users / privilege escalation ----------
+test('user cannot grant themselves a role (the role-switcher hole stays closed)', async () => {
+    await assertFails(patientA().collection('users').doc(PATIENT_A).update({ role: 'lab_admin', labId: 'LAB1' }));
+    await assertFails(patientA().collection('users').doc(PATIENT_A).update({ role: 'admin' }));
+});
+
+test('user can edit their own profile fields', async () => {
+    await assertSucceeds(patientA().collection('users').doc(PATIENT_A).update({ firstName: 'Ada' }));
+});
+
+test('new accounts can only be created as plain users', async () => {
+    await assertSucceeds(patientB().collection('users').doc(PATIENT_B).set({ email: 'b@x.com', role: 'user' }));
+    await assertFails(patientB().collection('users').doc(PATIENT_B).set({ email: 'b@x.com', role: 'admin' }));
+});
+
+test('users cannot read other users\' profiles', async () => {
+    await assertFails(patientB().collection('users').doc(PATIENT_A).get());
+});
+
+// ---------- results ----------
+test('patient can read and delete own result; stranger cannot read it', async () => {
+    await assertSucceeds(patientA().collection('results').doc('res-a').get());
+    await assertFails(patientB().collection('results').doc('res-a').get());
+    await assertSucceeds(patientA().collection('results').doc('res-a').delete());
+});
+
+test('lab admin can create a result for their lab; not for another lab', async () => {
+    await assertSucceeds(lab1Admin().collection('results').add({ userId: PATIENT_A, labId: 'LAB1', status: 'ready' }));
+    await assertFails(lab1Admin().collection('results').add({ userId: PATIENT_B, labId: 'LAB2', status: 'ready' }));
+});
+
+// ---------- reminders ----------
+test('reminders are owner-only', async () => {
+    await assertSucceeds(patientA().collection('reminders').doc('rem-a').get());
+    await assertFails(patientB().collection('reminders').doc('rem-a').get());
+});
+
+// ---------- catalog writes and unknown collections ----------
+test('signed-in users cannot write the catalog', async () => {
+    await assertFails(patientA().collection('labs').doc('LAB1').update({ name: 'hacked' }));
+    await assertFails(patientA().collection('labTests').doc('t1').set({ name: 'x' }));
+});
+
+test('unknown collections are denied by default', async () => {
+    await assertFails(patientA().collection('somethingElse').doc('x').set({ a: 1 }));
+    await assertFails(anon().collection('somethingElse').doc('x').get());
+});

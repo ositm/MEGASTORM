@@ -22,5 +22,13 @@ jobs:
       - name: Typecheck (all workspaces)
         run: npm run typecheck
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Firestore rules tests
+        run: npm run test:rules
+
       - name: Build patient app
         run: npm run build
