@@ -6,12 +6,12 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    // Role is read from Firestore (cross-service rules). Lab staff upload
-    // result files into the owning patient's folder.
+    // Roles are Firebase Auth custom claims (scripts/set-role.mjs). Lab staff
+    // upload result files into the owning patient's folder.
     function isLabStaff() {
       return isSignedIn()
-        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
-        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['lab_admin', 'admin'];
+        && 'role' in request.auth.token
+        && (request.auth.token.role == 'lab_admin' || request.auth.token.role == 'admin');
     }
 
     function isValidResultFile() {

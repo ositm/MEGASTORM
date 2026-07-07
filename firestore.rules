@@ -11,27 +11,27 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Role lives on the user document. Self-modification of role/labId is
-    // blocked below, and grants are performed with the Admin SDK (scripts),
-    // which bypasses these rules.
-    function userDoc() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    // Roles are Firebase Auth custom claims, granted only via
+    // scripts/set-role.mjs (Admin API). The role field on users/{uid} is a
+    // display mirror and carries no authority here.
+    function hasRole(r) {
+      return isSignedIn()
+        && 'role' in request.auth.token
+        && request.auth.token.role == r;
     }
 
     function isAdmin() {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && userDoc().role == 'admin';
+      return hasRole('admin');
     }
 
     function isLabAdmin() {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && userDoc().role == 'lab_admin';
+      return hasRole('lab_admin');
     }
 
     function isLabAdminFor(labId) {
-      return isLabAdmin() && userDoc().labId == labId;
+      return isLabAdmin()
+        && 'labId' in request.auth.token
+        && request.auth.token.labId == labId;
     }
 
     // ---------- Users ----------
