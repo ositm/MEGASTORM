@@ -167,3 +167,27 @@ export function roleMayEmit(role: ActorRole, type: OrderEventType): boolean {
 export function isTerminal(status: OrderStatus): boolean {
     return ORDER_TRANSITIONS[status].length === 0;
 }
+
+/**
+ * The next custody action a given role can take on an order in `status`,
+ * if exactly one forward step is available to that role. Used to drive the
+ * lab/collector portals' single-action buttons. Excludes CANCELLED/DISPUTED.
+ */
+export function nextActionFor(role: ActorRole, status: OrderStatus): OrderEventType | null {
+    const candidates = (ORDER_TRANSITIONS[status] ?? []).filter(
+        (t) => t !== 'CANCELLED' && t !== 'DISPUTED' && t !== status && roleMayEmit(role, t)
+    );
+    return candidates.length === 1 ? candidates[0] : null;
+}
+
+/** Human-readable label for the button that performs `type`. */
+export const EVENT_ACTION_LABELS: Partial<Record<OrderEventType, string>> = {
+    LAB_RECEIVED: 'Mark received',
+    TESTING_STARTED: 'Start testing',
+    TESTING_COMPLETED: 'Mark testing complete',
+    RESULT_VALIDATED: 'Validate result',
+    RESULT_RELEASED: 'Release to patient',
+    COLLECTOR_ARRIVED: 'Mark arrived',
+    SAMPLE_COLLECTED: 'Mark sample collected',
+    HANDED_TO_DISPATCH: 'Hand to dispatch',
+};

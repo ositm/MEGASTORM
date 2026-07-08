@@ -20,8 +20,8 @@ const sidebarItems = [
         icon: ShieldCheck,
     },
     {
-        title: "Bookings",
-        href: "/admin/bookings",
+        title: "Orders",
+        href: "/admin/orders",
         icon: Calendar,
     },
     {
