@@ -1,8 +1,25 @@
 # LabLink Ecosystem — Phase 2 Target Architecture & Roadmap
 
-**Date:** 2026-07-07
-**Status:** Proposed (pending founder approval)
+**Date:** 2026-07-07 (progress updated 2026-07-08)
+**Status:** In progress — M0 and M1 complete; M2 complete
 **Companion doc:** `docs/AUDIT.md` (Phase 1 findings)
+
+> **Build progress**
+> - **M0 (security hotfix):** ✅ done — rules hardened & deployed, dev-tool
+>   pages removed, APIs authenticated, Next upgraded.
+> - **M1 (foundation):** ✅ done — npm-workspaces monorepo (`apps/patient`,
+>   `packages/core`), custom-claims RBAC (`scripts/set-role.mjs`), schema-v2
+>   `orders` + custody rules, CI with typecheck/unit/rules tests, `lablink-staging`.
+> - **M2 (patient app v2):** ✅ done — order model + chain-of-custody state
+>   machine, server order service, patient & lab portals cut over to orders,
+>   Paystack checkout (`ORDER_CREATED→PAYMENT_CONFIRMED`), and result-release
+>   notifications (`PATIENT_NOTIFIED`). Full booking→paid→tested→released→
+>   notified pipeline verified end-to-end.
+> - **Next:** M3 (dedicated laboratory portal app) / M4 (collector portal).
+>
+> Deploy config the founder still owns: Vercel env vars
+> `FIREBASE_SERVICE_ACCOUNT` (done) and `PAYSTACK_SECRET_KEY` (+ Paystack
+> webhook URL → `/api/paystack/webhook`); optional `RESEND_API_KEY` for email.
 
 ---
 
