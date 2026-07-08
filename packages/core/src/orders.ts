@@ -121,6 +121,26 @@ export const EVENT_ACTOR_ROLES: Record<OrderEventType, readonly ActorRole[]> = {
     DISPUTED: ['patient', 'admin'],
 };
 
+/** Patient-facing labels for each order status. */
+export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+    ORDER_CREATED: 'Awaiting payment',
+    PAYMENT_CONFIRMED: 'Paid — awaiting processing',
+    COLLECTOR_ASSIGNED: 'Collector assigned',
+    COLLECTOR_ARRIVED: 'Collector arrived',
+    SAMPLE_COLLECTED: 'Sample collected',
+    HANDED_TO_DISPATCH: 'Sample in transit',
+    DISPATCH_DELIVERED: 'Delivered to lab',
+    LAB_RECEIVED: 'Received by lab',
+    TESTING_STARTED: 'Testing in progress',
+    TESTING_COMPLETED: 'Testing completed',
+    RESULT_UPLOADED: 'Result being reviewed',
+    RESULT_VALIDATED: 'Result being reviewed',
+    RESULT_RELEASED: 'Result ready',
+    PATIENT_NOTIFIED: 'Result ready',
+    CANCELLED: 'Cancelled',
+    DISPUTED: 'Disputed',
+};
+
 export function canTransition(from: OrderStatus, to: OrderEventType): boolean {
     return (ORDER_TRANSITIONS[from] ?? []).includes(to);
 }

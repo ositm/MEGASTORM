@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { useFirebase, useUser } from '@/firebase/FirebaseProvider';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { useUser } from '@/firebase/FirebaseProvider';
+import { createOrderViaApi } from '@/lib/api-client';
 import { Lab, LabTest } from '@lablink/core';
 import { Loader2, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -18,7 +18,6 @@ interface BookingModalProps {
 }
 
 export default function BookingModal({ isOpen, onClose, lab, test }: BookingModalProps) {
-    const { firestore } = useFirebase();
     const { user } = useUser();
     const router = useRouter();
 
@@ -37,23 +36,17 @@ export default function BookingModal({ isOpen, onClose, lab, test }: BookingModa
         setError('');
 
         try {
-            if (!firestore) {
-                throw new Error("Firestore is not initialized");
+            if (!lab.id) {
+                throw new Error('This lab cannot be booked yet.');
             }
 
-            const bookingData = {
-                userId: user.uid,
-                userName: user.displayName || user.email || 'Unknown User',
+            await createOrderViaApi(user, {
                 labId: lab.id,
                 labName: lab.name,
-                testName: test.name,
-                price: test.price,
-                date: Timestamp.fromDate(date),
-                status: 'pending',
-                createdAt: Timestamp.now(),
-            };
-
-            await addDoc(collection(firestore, 'bookings'), bookingData);
+                type: 'walk_in',
+                items: [{ testId: test.testId, name: test.name, price: test.price }],
+                scheduledFor: date.toISOString(),
+            });
 
             setSuccess(true);
             setTimeout(() => {

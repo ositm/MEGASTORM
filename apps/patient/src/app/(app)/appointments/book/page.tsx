@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useFirebase, useUser } from '@/firebase/FirebaseProvider';
-import { collection, addDoc, doc, getDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import { createOrderViaApi } from '@/lib/api-client';
 import { Calendar as CalendarIcon, Clock, MapPin, Search, CheckCircle2, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -107,7 +108,7 @@ function BookingForm() {
     }
 
     const handleBooking = async () => {
-        if (!firestore || !user || !item || !selectedLab || !date || !time) return;
+        if (!user || !item || !selectedLab?.id || !date || !time) return;
         setLoading(true);
 
         try {
@@ -116,21 +117,14 @@ function BookingForm() {
             const bookingDate = new Date(date);
             bookingDate.setHours(parseInt(hours), parseInt(minutes));
 
-            const bookingData = {
-                userId: user.uid,
-                testId: item.id || 'unknown',
-                testName: item.name,
+            const created = await createOrderViaApi(user, {
                 labId: selectedLab.id,
                 labName: selectedLab.name,
-                labAddress: selectedLab.address,
-                date: Timestamp.fromDate(bookingDate),
-                status: 'pending',
-                price: (item as any).price || 0,
-                createdAt: Timestamp.now()
-            };
-
-            const docRef = await addDoc(collection(firestore, 'bookings'), bookingData);
-            setBookingId(docRef.id);
+                type: 'walk_in',
+                items: [{ testId: item.id, name: item.name, price: (item as any).price || 0 }],
+                scheduledFor: bookingDate.toISOString(),
+            });
+            setBookingId(created.id);
             setStep(4);
         } catch (error) {
             console.error(error);
