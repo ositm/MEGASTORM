@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useFirebase, useUser } from '@/firebase/FirebaseProvider';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Order, OrderStatus, ORDER_STATUS_LABELS, canTransition } from '@lablink/core';
-import { appendOrderEventViaApi } from '@/lib/api-client';
+import { appendOrderEventViaApi, startOrderPaymentViaApi } from '@/lib/api-client';
 import { Calendar, Clock, MapPin, Beaker } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ export default function AppointmentsPage() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
+  const [paying, setPaying] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
     if (!firestore || !user) return;
@@ -47,6 +48,18 @@ export default function AppointmentsPage() {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  const handlePay = async (order: OrderRow) => {
+    if (!user) return;
+    setPaying(order.id);
+    try {
+      const { authorizationUrl } = await startOrderPaymentViaApi(user, order.id);
+      window.location.href = authorizationUrl;
+    } catch (e: any) {
+      toast.error(e.message || 'Could not start payment');
+      setPaying(null);
+    }
+  };
 
   const handleCancel = async (order: OrderRow) => {
     if (!user) return;
@@ -125,6 +138,15 @@ export default function AppointmentsPage() {
                   </div>
 
                   <div className="flex flex-col justify-center gap-2 min-w-[150px]">
+                    {order.status === 'ORDER_CREATED' && order.paymentStatus !== 'paid' && (
+                      <Button
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                        disabled={paying === order.id}
+                        onClick={() => handlePay(order)}
+                      >
+                        {paying === order.id ? 'Redirecting…' : `Pay ₦${order.amount.toLocaleString()}`}
+                      </Button>
+                    )}
                     {isReady ? (
                       <Button asChild className="w-full bg-green-600 hover:bg-green-700">
                         <a href="/results">View Results</a>

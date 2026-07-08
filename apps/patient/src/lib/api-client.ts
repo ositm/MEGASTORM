@@ -37,3 +37,14 @@ export function appendOrderEventViaApi(
 ): Promise<{ ok: true }> {
     return apiPost(user, `/api/orders/${orderId}/events`, { type, meta });
 }
+
+export function startOrderPaymentViaApi(user: User, orderId: string): Promise<{ authorizationUrl: string }> {
+    return apiPost(user, `/api/orders/${orderId}/pay`, {});
+}
+
+export function verifyPaymentViaApi(
+    user: User,
+    reference: string
+): Promise<{ confirmed: boolean; alreadyPaid?: boolean; orderId?: string }> {
+    return apiPost(user, '/api/payments/verify', { reference });
+}

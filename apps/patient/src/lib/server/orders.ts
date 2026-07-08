@@ -105,9 +105,11 @@ export async function appendOrderEvent(
         if (!orderSnap.exists) throw new HttpError(404, 'Order not found');
         const order = orderSnap.data()!;
 
-        // Scope: callers may only touch orders they are party to.
+        // Scope: callers may only touch orders they are party to. 'system' is
+        // trusted server context (e.g. payment confirmation), never a user token.
         const inScope =
             caller.role === 'admin' ||
+            caller.role === 'system' ||
             (caller.role === 'patient' && order.patientId === caller.uid) ||
             ((caller.role === 'lab_admin' || caller.role === 'lab_staff') && order.labId === caller.labId) ||
             (caller.role === 'collector' && order.collectorId === caller.uid);
