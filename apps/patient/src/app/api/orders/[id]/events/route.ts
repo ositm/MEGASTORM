@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callerRole, getAuthenticatedUser } from '@/lib/server/auth';
 import { appendEventSchema, appendOrderEvent, HttpError } from '@/lib/server/orders';
+import { notifyResultReleased } from '@/lib/server/notifications';
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
     try {
@@ -35,6 +36,17 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
             parsed.data.type,
             parsed.data.meta
         );
+
+        // Releasing a result notifies the patient and closes the custody chain.
+        // Best-effort: a notification failure must not fail the release.
+        if (parsed.data.type === 'RESULT_RELEASED') {
+            try {
+                await notifyResultReleased(id);
+            } catch (e) {
+                console.error('Result-released notification failed:', e);
+            }
+        }
+
         return NextResponse.json({ ok: true });
     } catch (e: any) {
         if (e instanceof HttpError) {
