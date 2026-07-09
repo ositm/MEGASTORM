@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { useUser } from '@/firebase/FirebaseProvider';
 import { createOrderViaApi } from '@/lib/api-client';
-import { Lab, LabTest } from '@lablink/core';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Lab, LabTest, OrderType } from '@lablink/core';
+import { Loader2, CheckCircle, Building2, Home } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 
 interface BookingModalProps {
@@ -22,6 +23,8 @@ export default function BookingModal({ isOpen, onClose, lab, test }: BookingModa
     const router = useRouter();
 
     const [date, setDate] = useState<Date | undefined>(new Date());
+    const [collectionType, setCollectionType] = useState<OrderType>('walk_in');
+    const [address, setAddress] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
@@ -29,6 +32,10 @@ export default function BookingModal({ isOpen, onClose, lab, test }: BookingModa
     const handleBooking = async () => {
         if (!date || !user) {
             setError("Please select a date and ensure you are logged in.");
+            return;
+        }
+        if (collectionType === 'home_collection' && !address.trim()) {
+            setError('Please enter your collection address.');
             return;
         }
 
@@ -43,9 +50,10 @@ export default function BookingModal({ isOpen, onClose, lab, test }: BookingModa
             await createOrderViaApi(user, {
                 labId: lab.id,
                 labName: lab.name,
-                type: 'walk_in',
+                type: collectionType,
                 items: [{ testId: test.testId, name: test.name, price: test.price }],
                 scheduledFor: date.toISOString(),
+                ...(collectionType === 'home_collection' ? { address: address.trim() } : {}),
             });
 
             setSuccess(true);
@@ -79,6 +87,37 @@ export default function BookingModal({ isOpen, onClose, lab, test }: BookingModa
                     </div>
                 ) : (
                     <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setCollectionType('walk_in')}
+                                className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-sm transition-colors ${
+                                    collectionType === 'walk_in' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                }`}
+                            >
+                                <Building2 className="h-5 w-5" />
+                                Visit lab
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setCollectionType('home_collection')}
+                                className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-sm transition-colors ${
+                                    collectionType === 'home_collection' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                }`}
+                            >
+                                <Home className="h-5 w-5" />
+                                Home collection
+                            </button>
+                        </div>
+
+                        {collectionType === 'home_collection' && (
+                            <Input
+                                placeholder="Collection address"
+                                value={address}
+                                onChange={(e) => setAddress(e.target.value)}
+                            />
+                        )}
+
                         <div className="flex justify-center">
                             <Calendar
                                 mode="single"

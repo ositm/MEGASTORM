@@ -9,7 +9,7 @@ import { Calendar as CalendarIcon, Clock, MapPin, Search, CheckCircle2, Phone } 
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar'; // Assuming this exists, if not I'll use a simple input or basic react-day-picker if installed
-import { Lab, TestPackage, MedicalTest } from '@lablink/core';
+import { Lab, TestPackage, MedicalTest, OrderType } from '@lablink/core';
 import { googleCalendarUrl, outlookCalendarUrl, downloadIcs } from '@/utils/calendar';
 
 function BookingForm() {
@@ -35,6 +35,10 @@ function BookingForm() {
     // Date/Time State
     const [date, setDate] = useState<Date | undefined>(undefined);
     const [time, setTime] = useState('');
+
+    // Collection type
+    const [collectionType, setCollectionType] = useState<OrderType>('walk_in');
+    const [address, setAddress] = useState('');
 
     // Booking State
     const [bookingId, setBookingId] = useState('');
@@ -120,9 +124,10 @@ function BookingForm() {
             const created = await createOrderViaApi(user, {
                 labId: selectedLab.id,
                 labName: selectedLab.name,
-                type: 'walk_in',
+                type: collectionType,
                 items: [{ testId: item.id, name: item.name, price: (item as any).price || 0 }],
                 scheduledFor: bookingDate.toISOString(),
+                ...(collectionType === 'home_collection' ? { address: address.trim() } : {}),
             });
             setBookingId(created.id);
             setStep(4);
@@ -284,7 +289,34 @@ function BookingForm() {
 
                     {step === 2 && (
                         <div className="space-y-6">
-                            <h2 className="text-xl font-semibold">Select Date & Time</h2>
+                            <h2 className="text-xl font-semibold">Collection & Schedule</h2>
+                            <div className="p-4 border rounded-lg bg-white space-y-4">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCollectionType('walk_in')}
+                                        className={`rounded-lg border p-3 text-sm font-medium transition-colors ${collectionType === 'walk_in' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                                    >
+                                        🏥 Visit the lab
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCollectionType('home_collection')}
+                                        className={`rounded-lg border p-3 text-sm font-medium transition-colors ${collectionType === 'home_collection' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                                    >
+                                        🏠 Home collection
+                                    </button>
+                                </div>
+                                {collectionType === 'home_collection' && (
+                                    <input
+                                        type="text"
+                                        placeholder="Collection address"
+                                        value={address}
+                                        onChange={(e) => setAddress(e.target.value)}
+                                        className="w-full p-2 border rounded"
+                                    />
+                                )}
+                            </div>
                             <div className="p-4 border rounded-lg bg-white">
                                 <input
                                     type="date"
@@ -305,7 +337,13 @@ function BookingForm() {
                             </div>
                             <div className="flex gap-4">
                                 <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-                                <Button className="flex-1" disabled={!date || !time} onClick={() => setStep(3)}>Continue</Button>
+                                <Button
+                                    className="flex-1"
+                                    disabled={!date || !time || (collectionType === 'home_collection' && !address.trim())}
+                                    onClick={() => setStep(3)}
+                                >
+                                    Continue
+                                </Button>
                             </div>
                         </div>
                     )}
@@ -325,6 +363,12 @@ function BookingForm() {
                                 <div className="flex justify-between border-b pb-4">
                                     <span className="text-gray-600">Date & Time</span>
                                     <span className="font-semibold">{date?.toLocaleDateString()} at {time}</span>
+                                </div>
+                                <div className="flex justify-between border-b pb-4">
+                                    <span className="text-gray-600">Collection</span>
+                                    <span className="font-semibold text-right">
+                                        {collectionType === 'home_collection' ? `Home collection — ${address}` : 'Visit the lab'}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between pt-2">
                                     <span className="text-gray-600 font-bold">Total Price</span>
