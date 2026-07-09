@@ -16,7 +16,7 @@ const IDTK = `https://identitytoolkit.googleapis.com/v1/projects/${PROJECT}`;
 const FS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 
 const [, , arg1, roleArg, labIdArg] = process.argv;
-const VALID_ROLES = ['user', 'lab_admin', 'admin'];
+const VALID_ROLES = ['user', 'lab_admin', 'lab_staff', 'collector', 'admin'];
 
 const token = await getAccessToken();
 const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };

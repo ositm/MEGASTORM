@@ -1,5 +1,5 @@
 import type { User } from 'firebase/auth';
-import type { OrderEventType, OrderItem, OrderType } from '@lablink/core';
+import type { JobAction, OrderEventType, OrderItem, OrderType } from '@lablink/core';
 
 async function apiPost<T>(user: User, path: string, body: unknown): Promise<T> {
     const token = await user.getIdToken();
@@ -47,4 +47,8 @@ export function verifyPaymentViaApi(
     reference: string
 ): Promise<{ confirmed: boolean; alreadyPaid?: boolean; orderId?: string }> {
     return apiPost(user, '/api/payments/verify', { reference });
+}
+
+export function advanceJobViaApi(user: User, jobId: string, action: JobAction): Promise<{ ok: true }> {
+    return apiPost(user, `/api/jobs/${jobId}`, { action });
 }

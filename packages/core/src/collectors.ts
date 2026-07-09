@@ -65,3 +65,26 @@ export const OPEN_JOB_STATUSES: readonly JobStatus[] = ['pending', 'offered'];
 export function isJobOpen(status: JobStatus): boolean {
     return OPEN_JOB_STATUSES.includes(status);
 }
+
+// Collector-driven job actions and how each maps to a job status and the
+// order custody event it records. `accept` is handled specially (assignment).
+// The collector currently hands the sample directly to the lab; the separate
+// dispatch leg (HANDED_TO_DISPATCH / DISPATCH_DELIVERED) arrives with the
+// dispatch flow in a later milestone.
+export type JobAction = 'accept' | 'arrive' | 'collect';
+
+export const JOB_ACTIONS = ['accept', 'arrive', 'collect'] as const;
+
+export const JOB_ACTION_MAP: Record<
+    Exclude<JobAction, 'accept'>,
+    { jobStatus: JobStatus; orderEvent: 'COLLECTOR_ARRIVED' | 'SAMPLE_COLLECTED' }
+> = {
+    arrive: { jobStatus: 'arrived', orderEvent: 'COLLECTOR_ARRIVED' },
+    collect: { jobStatus: 'collected', orderEvent: 'SAMPLE_COLLECTED' },
+};
+
+export const JOB_ACTION_LABELS: Record<JobAction, string> = {
+    accept: 'Accept job',
+    arrive: 'Mark arrived',
+    collect: 'Mark sample collected',
+};

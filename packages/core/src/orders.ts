@@ -57,6 +57,8 @@ export interface Order {
     scheduledFor?: Timestamp;
     /** Collection address, for home_collection orders. */
     address?: string;
+    /** Assigned collector (home_collection), set when a job is accepted. */
+    collectorId?: string | null;
     createdAt: Timestamp;
     updatedAt: Timestamp;
 }
