@@ -88,3 +88,11 @@ export const JOB_ACTION_LABELS: Record<JobAction, string> = {
     arrive: 'Mark arrived',
     collect: 'Mark sample collected',
 };
+
+/** The next action a collector can take on a job in the given status. */
+export function nextJobAction(status: JobStatus): JobAction | null {
+    if (isJobOpen(status)) return 'accept';
+    if (status === 'accepted') return 'arrive';
+    if (status === 'arrived') return 'collect';
+    return null;
+}

@@ -94,7 +94,7 @@ export interface UserProfile {
     phoneNumber?: string;
     address?: string;
     gender?: 'male' | 'female' | 'other' | 'prefer-not-to-say';
-    role?: 'admin' | 'lab_admin' | 'user';
+    role?: 'admin' | 'lab_admin' | 'lab_staff' | 'collector' | 'user';
     labId?: string;
     preferences?: {
         emailNotifications: boolean;
