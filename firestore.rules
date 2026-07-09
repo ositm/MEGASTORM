@@ -132,7 +132,13 @@ service cloud.firestore {
             && (resource.data.status in ['pending', 'offered']
                 || resource.data.collectorId == request.auth.uid))
         || isOwner(resource.data.patientId);
-      allow write: if false;
+      // The assigned collector may update ONLY their live location; all
+      // custody-affecting fields remain server-only (Admin SDK).
+      allow update: if isSignedIn()
+        && resource.data.collectorId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['collectorLocation', 'locationUpdatedAt']);
+      allow create, delete: if false;
     }
 
     // ---------- Results ----------

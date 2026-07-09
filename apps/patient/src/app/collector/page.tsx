@@ -7,7 +7,8 @@ import { useCollectorProfile } from '@/hooks/use-collector-profile';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useUser } from '@/firebase/FirebaseProvider';
 import { advanceJobViaApi } from '@/lib/api-client';
-import { JobAction, JOB_ACTION_LABELS, nextJobAction } from '@lablink/core';
+import { JobAction, JOB_ACTION_LABELS, nextJobAction, isJobTrackable } from '@lablink/core';
+import { LocationShare } from '@/components/collector/location-share';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, Package, Loader2, ShieldCheck, Clock, XCircle } from 'lucide-react';
@@ -106,11 +107,14 @@ function CollectorJobs() {
                         )}
                         <div className="text-xs text-gray-400 mt-1 capitalize">Status: {job.status}</div>
                     </div>
-                    {next && (
-                        <Button disabled={busyId === job.id} onClick={() => act(job, next)}>
-                            {busyId === job.id ? <Loader2 className="h-4 w-4 animate-spin" /> : JOB_ACTION_LABELS[next]}
-                        </Button>
-                    )}
+                    <div className="flex flex-col items-start sm:items-end gap-2">
+                        {next && (
+                            <Button disabled={busyId === job.id} onClick={() => act(job, next)}>
+                                {busyId === job.id ? <Loader2 className="h-4 w-4 animate-spin" /> : JOB_ACTION_LABELS[next]}
+                            </Button>
+                        )}
+                        {isJobTrackable(job.status) && <LocationShare jobId={job.id} />}
+                    </div>
                 </CardContent>
             </Card>
         );

@@ -188,10 +188,21 @@ test('the patient can read the job for their own order (tracking)', async () => 
     await assertFails(patientB().collection('jobs').doc('job-open').get());
 });
 
-test('no client can write jobs (server-only)', async () => {
+test('no client can write custody fields or create/delete jobs (server-only)', async () => {
+    await assertFails(collectorA().collection('jobs').doc('job-mine').update({ status: 'collected' }));
     await assertFails(collectorA().collection('jobs').doc('job-open').update({ status: 'accepted', collectorId: 'collector-a' }));
     await assertFails(collectorA().collection('jobs').add({ orderId: 'x', patientId: PATIENT_A, labId: 'LAB1', status: 'pending' }));
     await assertFails(platformAdmin().collection('jobs').doc('job-open').update({ status: 'cancelled' }));
+});
+
+test('the assigned collector may update only their live location', async () => {
+    await assertSucceeds(collectorA().collection('jobs').doc('job-mine').update({ collectorLocation: { latitude: 9.05, longitude: 7.49 }, locationUpdatedAt: new Date() }));
+    // Cannot piggyback a status change onto a location update:
+    await assertFails(collectorA().collection('jobs').doc('job-mine').update({ collectorLocation: { latitude: 9.1, longitude: 7.5 }, status: 'collected' }));
+    // Cannot update another collector's job location:
+    await assertFails(collectorA().collection('jobs').doc('job-other').update({ collectorLocation: { latitude: 9.05, longitude: 7.49 } }));
+    // A patient cannot write location:
+    await assertFails(patientA().collection('jobs').doc('job-open').update({ collectorLocation: { latitude: 9.05, longitude: 7.49 } }));
 });
 
 // ---------- catalog writes and unknown collections ----------

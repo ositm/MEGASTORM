@@ -5,10 +5,11 @@ import { useFirebase, useUser } from '@/firebase/FirebaseProvider';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Order, OrderStatus, ORDER_STATUS_LABELS, canTransition } from '@lablink/core';
 import { appendOrderEventViaApi, startOrderPaymentViaApi } from '@/lib/api-client';
-import { Calendar, Clock, MapPin, Beaker } from 'lucide-react';
+import { Calendar, Clock, MapPin, Beaker, Navigation } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import TrackCollectorModal from '@/components/track-collector-modal';
 
 type OrderRow = Order & { id: string };
 
@@ -28,6 +29,7 @@ export default function AppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [paying, setPaying] = useState<string | null>(null);
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
     if (!firestore || !user) return;
@@ -102,6 +104,9 @@ export default function AppointmentsPage() {
             const title = order.items?.map((i) => i.name).join(', ') || 'Lab test';
             const canCancel = canTransition(order.status, 'CANCELLED');
             const isReady = READY_STATUSES.includes(order.status);
+            const canTrack =
+              order.type === 'home_collection' &&
+              ['COLLECTOR_ASSIGNED', 'COLLECTOR_ARRIVED', 'SAMPLE_COLLECTED'].includes(order.status);
             return (
               <div key={order.id} className="bg-white rounded-xl shadow-md overflow-hidden border-l-4 border-blue-600">
                 <div className="p-6 flex flex-col md:flex-row justify-between gap-6">
@@ -147,6 +152,15 @@ export default function AppointmentsPage() {
                         {paying === order.id ? 'Redirecting…' : `Pay ₦${order.amount.toLocaleString()}`}
                       </Button>
                     )}
+                    {canTrack && (
+                      <Button
+                        variant="outline"
+                        className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+                        onClick={() => setTrackingOrderId(order.id)}
+                      >
+                        <Navigation className="h-4 w-4 mr-1" /> Track collector
+                      </Button>
+                    )}
                     {isReady ? (
                       <Button asChild className="w-full bg-green-600 hover:bg-green-700">
                         <a href="/results">View Results</a>
@@ -168,6 +182,12 @@ export default function AppointmentsPage() {
           })}
         </div>
       )}
+
+      <TrackCollectorModal
+        orderId={trackingOrderId}
+        open={trackingOrderId !== null}
+        onClose={() => setTrackingOrderId(null)}
+      />
     </div>
   );
 }

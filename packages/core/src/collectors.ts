@@ -55,8 +55,18 @@ export interface Job {
     address?: string;
     location?: { latitude: number; longitude: number };
     collectorId?: string | null;
+    /** Live collector position, updated by the collector during an active job. */
+    collectorLocation?: { latitude: number; longitude: number };
+    locationUpdatedAt?: Timestamp;
     createdAt: Timestamp;
     updatedAt: Timestamp;
+}
+
+/** Job statuses during which the collector shares live location. */
+export const TRACKABLE_JOB_STATUSES: readonly JobStatus[] = ['accepted', 'arrived'];
+
+export function isJobTrackable(status: JobStatus): boolean {
+    return TRACKABLE_JOB_STATUSES.includes(status);
 }
 
 /** Job statuses that are still available for a collector to accept. */
