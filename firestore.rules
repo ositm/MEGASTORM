@@ -57,6 +57,13 @@ service cloud.firestore {
       allow read: if true;
       allow update: if isAdmin() || isLabAdminFor(labId);
       allow create, delete: if isAdmin();
+
+      // Staff roster is managed server-side (Admin SDK grants the claim);
+      // only the lab's admin and platform admins can read it.
+      match /staff/{staffUid} {
+        allow read: if isLabAdminFor(labId) || isAdmin();
+        allow write: if false;
+      }
     }
 
     match /labTests/{testId} {

@@ -68,3 +68,11 @@ export function decideLabClaimViaApi(
 ): Promise<{ ok: true }> {
     return apiPost(user, `/api/admin/lab-claims/${claimId}`, { action });
 }
+
+export function addLabStaffViaApi(user: User, email: string): Promise<{ ok: true; uid: string }> {
+    return apiPost(user, '/api/lab/staff', { action: 'add', email });
+}
+
+export function removeLabStaffViaApi(user: User, uid: string): Promise<{ ok: true }> {
+    return apiPost(user, '/api/lab/staff', { action: 'remove', uid });
+}

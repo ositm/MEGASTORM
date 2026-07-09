@@ -176,6 +176,17 @@ test('a collector cannot read another collector\'s profile or documents', async 
     await assertFails(collectorB().collection('collectors').doc('collector-a').collection('documents').doc('doc-1').get());
 });
 
+// ---------- lab staff roster ----------
+test('lab staff roster is readable by the lab admin, not others; never client-writable', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+        await ctx.firestore().collection('labs').doc('LAB1').collection('staff').doc('s1').set({ uid: 's1', email: 's@x.com' });
+    });
+    await assertSucceeds(lab1Admin().collection('labs').doc('LAB1').collection('staff').doc('s1').get());
+    await assertSucceeds(platformAdmin().collection('labs').doc('LAB1').collection('staff').doc('s1').get());
+    await assertFails(patientA().collection('labs').doc('LAB1').collection('staff').doc('s1').get());
+    await assertFails(lab1Admin().collection('labs').doc('LAB1').collection('staff').add({ uid: 'x' }));
+});
+
 // ---------- jobs ----------
 test('collectors can read open jobs and their own; not other collectors\' jobs', async () => {
     await assertSucceeds(collectorA().collection('jobs').doc('job-open').get());
