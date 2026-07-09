@@ -2,6 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from './firebase-admin';
 import { appendOrderEvent, HttpError } from './orders';
 import { initializeTransaction, verifyTransaction } from './paystack';
+import { createJobForOrder } from './jobs';
 
 /**
  * Starts a Paystack checkout for an unpaid order the caller owns.
@@ -68,6 +69,15 @@ export async function confirmPaymentByReference(
     await appendOrderEvent({ uid: 'system', role: 'system' }, orderId, 'PAYMENT_CONFIRMED', {
         paymentRef: reference,
     });
+
+    // Home-collection orders spawn a collection job for collectors to accept.
+    if (order.type === 'home_collection') {
+        try {
+            await createJobForOrder(orderId);
+        } catch (e) {
+            console.error('Job creation after payment failed:', e);
+        }
+    }
 
     return { confirmed: true, orderId };
 }

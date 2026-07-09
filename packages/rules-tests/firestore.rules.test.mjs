@@ -15,6 +15,8 @@ const patientA = () => env.authenticatedContext(PATIENT_A).firestore();
 const patientB = () => env.authenticatedContext(PATIENT_B).firestore();
 const lab1Admin = () => env.authenticatedContext('lab1-admin', { role: 'lab_admin', labId: 'LAB1' }).firestore();
 const platformAdmin = () => env.authenticatedContext('root-admin', { role: 'admin' }).firestore();
+const collectorA = () => env.authenticatedContext('collector-a', { role: 'collector' }).firestore();
+const collectorB = () => env.authenticatedContext('collector-b', { role: 'collector' }).firestore();
 
 before(async () => {
     env = await initializeTestEnvironment({
@@ -33,6 +35,12 @@ before(async () => {
         await db.collection('orders').doc('ord-a').set({ patientId: PATIENT_A, labId: 'LAB1', status: 'ORDER_CREATED', amount: 5000 });
         await db.collection('orders').doc('ord-a').collection('events').doc('ev-1')
             .set({ type: 'ORDER_CREATED', patientId: PATIENT_A, labId: 'LAB1', prevEventId: null });
+        await db.collection('collectors').doc('collector-a').set({ uid: 'collector-a', verificationStatus: 'unverified', rating: 5 });
+        await db.collection('collectors').doc('collector-a').collection('documents').doc('doc-1')
+            .set({ type: 'government_id', status: 'approved', fileUrl: 'x' });
+        await db.collection('jobs').doc('job-open').set({ orderId: 'ord-a', patientId: PATIENT_A, labId: 'LAB1', status: 'pending', collectorId: null });
+        await db.collection('jobs').doc('job-mine').set({ orderId: 'ord-a', patientId: PATIENT_A, labId: 'LAB1', status: 'accepted', collectorId: 'collector-a' });
+        await db.collection('jobs').doc('job-other').set({ orderId: 'ord-b', patientId: PATIENT_B, labId: 'LAB2', status: 'accepted', collectorId: 'collector-b' });
     });
 });
 
@@ -141,6 +149,46 @@ test('no client can write orders or custody events — not even admins', async (
     await assertFails(lab1Admin().collection('orders').doc('ord-a').update({ status: 'LAB_RECEIVED' }));
     await assertFails(platformAdmin().collection('orders').doc('ord-a').collection('events').add({ type: 'CANCELLED' }));
     await assertFails(patientA().collection('orders').doc('ord-a').collection('events').doc('ev-1').delete());
+});
+
+// ---------- collectors ----------
+test('collector can create their own unverified profile but cannot self-verify', async () => {
+    await assertSucceeds(collectorB().collection('collectors').doc('collector-b').set({ uid: 'collector-b', verificationStatus: 'unverified' }));
+    await assertFails(collectorB().collection('collectors').doc('collector-b').set({ uid: 'collector-b', verificationStatus: 'verified' }));
+});
+
+test('collector cannot flip their own verificationStatus on update', async () => {
+    await assertFails(collectorA().collection('collectors').doc('collector-a').update({ verificationStatus: 'verified' }));
+    await assertSucceeds(collectorA().collection('collectors').doc('collector-a').update({ phone: '0800' }));
+});
+
+test('collector documents: owner uploads pending, only admin reviews', async () => {
+    await assertSucceeds(collectorA().collection('collectors').doc('collector-a').collection('documents').add({ type: 'qualification', status: 'pending', fileUrl: 'y' }));
+    await assertFails(collectorA().collection('collectors').doc('collector-a').collection('documents').add({ type: 'qualification', status: 'approved', fileUrl: 'y' }));
+    await assertSucceeds(platformAdmin().collection('collectors').doc('collector-a').collection('documents').doc('doc-1').update({ status: 'approved' }));
+});
+
+test('a collector cannot read another collector\'s profile or documents', async () => {
+    await assertFails(collectorB().collection('collectors').doc('collector-a').get());
+    await assertFails(collectorB().collection('collectors').doc('collector-a').collection('documents').doc('doc-1').get());
+});
+
+// ---------- jobs ----------
+test('collectors can read open jobs and their own; not other collectors\' jobs', async () => {
+    await assertSucceeds(collectorA().collection('jobs').doc('job-open').get());
+    await assertSucceeds(collectorA().collection('jobs').doc('job-mine').get());
+    await assertFails(collectorA().collection('jobs').doc('job-other').get());
+});
+
+test('the patient can read the job for their own order (tracking)', async () => {
+    await assertSucceeds(patientA().collection('jobs').doc('job-open').get());
+    await assertFails(patientB().collection('jobs').doc('job-open').get());
+});
+
+test('no client can write jobs (server-only)', async () => {
+    await assertFails(collectorA().collection('jobs').doc('job-open').update({ status: 'accepted', collectorId: 'collector-a' }));
+    await assertFails(collectorA().collection('jobs').add({ orderId: 'x', patientId: PATIENT_A, labId: 'LAB1', status: 'pending' }));
+    await assertFails(platformAdmin().collection('jobs').doc('job-open').update({ status: 'cancelled' }));
 });
 
 // ---------- catalog writes and unknown collections ----------

@@ -34,6 +34,10 @@ service cloud.firestore {
         && request.auth.token.labId == labId;
     }
 
+    function isCollector() {
+      return hasRole('collector');
+    }
+
     // ---------- Users ----------
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
@@ -93,6 +97,38 @@ service cloud.firestore {
           || isAdmin();
         allow write: if false;
       }
+    }
+
+    // ---------- Collectors ----------
+    // A collector owns their profile and uploads documents for review.
+    // Verification status is set only by the server/admin (never self-granted).
+    match /collectors/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid)
+        && request.resource.data.verificationStatus == 'unverified';
+      allow update: if isAdmin()
+        || (isOwner(uid)
+            && !request.resource.data.diff(resource.data).affectedKeys()
+                 .hasAny(['verificationStatus', 'rating']));
+      allow delete: if isAdmin();
+
+      match /documents/{docId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create: if isOwner(uid) && request.resource.data.status == 'pending';
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    // ---------- Jobs (home-collection work) ----------
+    // Written only by the server (Admin SDK). Collectors see open jobs and
+    // their own; the patient sees the job for their order (tracking).
+    match /jobs/{jobId} {
+      allow read: if isAdmin()
+        || (isCollector()
+            && (resource.data.status in ['pending', 'offered']
+                || resource.data.collectorId == request.auth.uid))
+        || isOwner(resource.data.patientId);
+      allow write: if false;
     }
 
     // ---------- Results ----------
