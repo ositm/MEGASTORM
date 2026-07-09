@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Calendar, Upload, Settings, LogOut, Beaker, ShieldCheck, UserCheck, Users } from "lucide-react";
+import { LayoutDashboard, Calendar, Upload, Settings, LogOut, Beaker, ShieldCheck, UserCheck, Users, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useFirebase } from "@/firebase/FirebaseProvider";
@@ -23,6 +23,11 @@ const sidebarItems = [
         title: "Orders",
         href: "/admin/orders",
         icon: Calendar,
+    },
+    {
+        title: "Analytics",
+        href: "/admin/analytics",
+        icon: BarChart3,
     },
     {
         title: "Collectors",
