@@ -2,6 +2,7 @@ import { Timestamp } from 'firebase/firestore';
 
 export * from './orders';
 export * from './collectors';
+export * from './geo';
 
 // Medical test from catalog
 export interface MedicalTest {
