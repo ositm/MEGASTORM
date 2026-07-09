@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useFirebase, useFirestore } from '@/firebase/FirebaseProvider';
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { useFirebase, useUser } from '@/firebase/FirebaseProvider';
+import { collection, getDocs, updateDoc, doc, query, where } from 'firebase/firestore';
+import { decideLabClaimViaApi } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, ShieldCheck } from 'lucide-react';
+import { CheckCircle, ShieldCheck, X, UserPlus } from 'lucide-react';
 
 interface Lab {
     id: string;
@@ -19,19 +20,31 @@ interface Lab {
     status?: string;
 }
 
+interface LabClaim {
+    id: string;
+    userId: string;
+    userEmail?: string;
+    labId: string;
+    labName?: string;
+    status: string;
+}
+
 export default function AdminLabsPage() {
     const { firestore } = useFirebase();
+    const { user } = useUser();
     const [labs, setLabs] = useState<Lab[]>([]);
+    const [claims, setClaims] = useState<LabClaim[]>([]);
     const [loading, setLoading] = useState(true);
+    const [busyClaim, setBusyClaim] = useState<string | null>(null);
 
     const fetchLabs = async () => {
         if (!firestore) return;
         setLoading(true);
         try {
-            const labsCol = collection(firestore, 'labs');
-            const snapshot = await getDocs(labsCol);
-            const labsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lab));
-            setLabs(labsData);
+            const snapshot = await getDocs(collection(firestore, 'labs'));
+            setLabs(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Lab)));
+            const claimSnap = await getDocs(query(collection(firestore, 'lab_claims'), where('status', '==', 'pending')));
+            setClaims(claimSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as LabClaim)));
         } catch (error) {
             console.error('Error fetching labs:', error);
             toast.error('Failed to load labs');
@@ -43,6 +56,20 @@ export default function AdminLabsPage() {
     useEffect(() => {
         fetchLabs();
     }, [firestore]);
+
+    const decideClaim = async (claimId: string, action: 'approve' | 'reject') => {
+        if (!user) return;
+        setBusyClaim(claimId);
+        try {
+            await decideLabClaimViaApi(user, claimId, action);
+            toast.success(action === 'approve' ? 'Lab access granted' : 'Request rejected');
+            await fetchLabs();
+        } catch (e: any) {
+            toast.error(e.message || 'Could not update request');
+        } finally {
+            setBusyClaim(null);
+        }
+    };
 
     const handleVerify = async (labId: string) => {
         if (!firestore) return;
@@ -74,6 +101,42 @@ export default function AdminLabsPage() {
                     <p className="text-gray-500">Manage and verify laboratory accounts.</p>
                 </div>
             </div>
+
+            {claims.length > 0 && (
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                        <UserPlus className="w-5 h-5 text-blue-600" />
+                        <h2 className="text-lg font-semibold text-gray-900">Pending access requests</h2>
+                    </div>
+                    {claims.map((claim) => (
+                        <Card key={claim.id} className="flex flex-col md:flex-row md:items-center justify-between p-5 border-blue-100 bg-blue-50/40">
+                            <div className="mb-3 md:mb-0">
+                                <h3 className="font-medium text-gray-900">{claim.labName || claim.labId}</h3>
+                                <p className="text-sm text-gray-500">Requested by {claim.userEmail || claim.userId}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    size="sm"
+                                    className="bg-green-600 hover:bg-green-700"
+                                    disabled={busyClaim === claim.id}
+                                    onClick={() => decideClaim(claim.id, 'approve')}
+                                >
+                                    <CheckCircle className="w-4 h-4 mr-1" /> Grant access
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                    disabled={busyClaim === claim.id}
+                                    onClick={() => decideClaim(claim.id, 'reject')}
+                                >
+                                    <X className="w-4 h-4 mr-1" /> Reject
+                                </Button>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            )}
 
             <div className="grid gap-4">
                 {labs.map(lab => (

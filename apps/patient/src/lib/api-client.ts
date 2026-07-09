@@ -60,3 +60,11 @@ export function decideCollectorViaApi(
 ): Promise<{ ok: true }> {
     return apiPost(user, `/api/admin/collectors/${uid}`, { action });
 }
+
+export function decideLabClaimViaApi(
+    user: User,
+    claimId: string,
+    action: 'approve' | 'reject'
+): Promise<{ ok: true }> {
+    return apiPost(user, `/api/admin/lab-claims/${claimId}`, { action });
+}
