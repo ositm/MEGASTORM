@@ -106,10 +106,14 @@ service cloud.firestore {
       allow read: if isOwner(uid) || isAdmin();
       allow create: if isOwner(uid)
         && request.resource.data.verificationStatus == 'unverified';
+      // Owners edit their profile and may submit for review (set
+      // verificationStatus to 'pending_review'), but never self-verify or
+      // touch their rating. 'verified'/'rejected' are admin-only.
       allow update: if isAdmin()
         || (isOwner(uid)
-            && !request.resource.data.diff(resource.data).affectedKeys()
-                 .hasAny(['verificationStatus', 'rating']));
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rating'])
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['verificationStatus'])
+                || request.resource.data.verificationStatus == 'pending_review'));
       allow delete: if isAdmin();
 
       match /documents/{docId} {

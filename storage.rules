@@ -14,6 +14,10 @@ service firebase.storage {
         && (request.auth.token.role == 'lab_admin' || request.auth.token.role == 'admin');
     }
 
+    function isAdmin() {
+      return isSignedIn() && 'role' in request.auth.token && request.auth.token.role == 'admin';
+    }
+
     function isValidResultFile() {
       return request.resource.size < 10 * 1024 * 1024
         && (request.resource.contentType == 'application/pdf'
@@ -27,6 +31,14 @@ service firebase.storage {
         && (request.auth.uid == userId || isLabStaff())
         && isValidResultFile();
       allow delete: if isSignedIn() && (request.auth.uid == userId || isLabStaff());
+    }
+
+    // Collector verification documents (government ID, license, qualifications).
+    // The collector uploads their own; only they and platform admins can read.
+    match /collectors/{userId}/documents/{fileName} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidResultFile();
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
     }
 
     // Legacy self-upload path (pre-hardening files). Read-only; existing

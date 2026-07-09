@@ -52,3 +52,11 @@ export function verifyPaymentViaApi(
 export function advanceJobViaApi(user: User, jobId: string, action: JobAction): Promise<{ ok: true }> {
     return apiPost(user, `/api/jobs/${jobId}`, { action });
 }
+
+export function decideCollectorViaApi(
+    user: User,
+    uid: string,
+    action: 'approve' | 'reject'
+): Promise<{ ok: true }> {
+    return apiPost(user, `/api/admin/collectors/${uid}`, { action });
+}

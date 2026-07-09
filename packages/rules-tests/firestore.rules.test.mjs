@@ -157,9 +157,12 @@ test('collector can create their own unverified profile but cannot self-verify',
     await assertFails(collectorB().collection('collectors').doc('collector-b').set({ uid: 'collector-b', verificationStatus: 'verified' }));
 });
 
-test('collector cannot flip their own verificationStatus on update', async () => {
+test('collector cannot self-verify but can submit for review', async () => {
     await assertFails(collectorA().collection('collectors').doc('collector-a').update({ verificationStatus: 'verified' }));
+    await assertFails(collectorA().collection('collectors').doc('collector-a').update({ verificationStatus: 'rejected' }));
+    await assertFails(collectorA().collection('collectors').doc('collector-a').update({ rating: 1 }));
     await assertSucceeds(collectorA().collection('collectors').doc('collector-a').update({ phone: '0800' }));
+    await assertSucceeds(collectorA().collection('collectors').doc('collector-a').update({ verificationStatus: 'pending_review' }));
 });
 
 test('collector documents: owner uploads pending, only admin reviews', async () => {
