@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     const pageToken = searchParams.get('pageToken');
 
     // Prefer a dedicated server key if available, otherwise fallback to the public key
-    const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_SERVER_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const GOOGLE_PLACES_API_KEY = (process.env.GOOGLE_PLACES_SERVER_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '').trim();
 
     if (!GOOGLE_PLACES_API_KEY) {
         return NextResponse.json({ error: 'Server configuration error: Missing API Key' }, { status: 500 });
@@ -80,9 +80,18 @@ export async function GET(request: Request) {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await response.json().catch(() => ({}));
             console.error('Google Places Search Error:', errorData);
-            return NextResponse.json({ error: 'Failed to fetch places' }, { status: response.status });
+            // Surface Google's reason (safe: contains no key) so misconfigured
+            // keys/APIs are diagnosable from the response instead of a shrug.
+            return NextResponse.json(
+                {
+                    error: 'Failed to fetch places',
+                    reason: errorData?.error?.status || 'UNKNOWN',
+                    detail: errorData?.error?.message || null,
+                },
+                { status: response.status }
+            );
         }
 
         const data = await response.json();

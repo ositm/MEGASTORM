@@ -7,7 +7,8 @@ export async function GET(request: NextRequest) {
     const lat = searchParams.get('lat');
     const lng = searchParams.get('lng');
 
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    // Prefer a dedicated server key if available, otherwise the public key.
+    const apiKey = (process.env.GOOGLE_PLACES_SERVER_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '').trim();
 
     if (!apiKey) {
         return NextResponse.json(
@@ -64,10 +65,16 @@ export async function GET(request: NextRequest) {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await response.json().catch(() => ({}));
             console.error('Google Places API Error:', errorData);
+            // Surface Google's reason (contains no key) so misconfigurations
+            // are diagnosable from the response.
             return NextResponse.json(
-                { error: 'Failed to fetch places from Google' },
+                {
+                    error: 'Failed to fetch places from Google',
+                    reason: errorData?.error?.status || 'UNKNOWN',
+                    detail: errorData?.error?.message || null,
+                },
                 { status: response.status }
             );
         }

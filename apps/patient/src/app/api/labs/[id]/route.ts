@@ -8,7 +8,10 @@ const BASE_URL = 'https://places.googleapis.com/v1/places';
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
-    const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const GOOGLE_PLACES_API_KEY = (process.env.GOOGLE_PLACES_SERVER_KEY
+        || process.env.GOOGLE_PLACES_API_KEY
+        || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+        || '').trim();
 
     if (!GOOGLE_PLACES_API_KEY) {
         return NextResponse.json({ error: 'Server configuration error: Missing API Key' }, { status: 500 });
@@ -38,9 +41,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
         if (!response.ok) {
             // If 404, it might not be a google place ID (maybe firestore ID passed here by mistake, though the page handles firestore first)
-            const errorData = await response.json();
+            const errorData = await response.json().catch(() => ({}));
             console.error('Google Place Details Error:', errorData);
-            return NextResponse.json({ error: 'Failed to fetch place details' }, { status: response.status });
+            return NextResponse.json(
+                {
+                    error: 'Failed to fetch place details',
+                    reason: errorData?.error?.status || 'UNKNOWN',
+                    detail: errorData?.error?.message || null,
+                },
+                { status: response.status }
+            );
         }
 
         const place = await response.json();
