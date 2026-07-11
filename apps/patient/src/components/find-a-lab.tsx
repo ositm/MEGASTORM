@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Search, Building2, MapPin, Phone, Star, MessageCircle, List, Map as MapIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLabSearch } from '@/hooks/use-labs'; // Use our new hook
+import { getWhatsAppLink } from '@/utils/whatsapp';
 import { Lab } from '@lablink/core';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -163,12 +164,6 @@ export default function FindALab() {
     }, [filteredLabs, userLocation]);
 
     const displayLabs = sortedByDistance && userLocation ? labsWithDistance : filteredLabs;
-
-    const getWhatsAppLink = (phone: string) => {
-        const cleanPhone = phone.replace(/\D/g, '');
-        const phoneWithCode = cleanPhone.startsWith('234') ? cleanPhone : `234${cleanPhone.replace(/^0/, '')}`;
-        return `https://wa.me/${phoneWithCode}`;
-    };
 
     const mapCenter: [number, number] = useMemo(() => {
         if (userLocation) return [userLocation.lat, userLocation.lng];

@@ -2,7 +2,6 @@
 import { NextResponse } from 'next/server';
 
 const BASE_URL = 'https://places.googleapis.com/v1/places:searchText';
-const DETAILS_BASE_URL = 'https://places.googleapis.com/v1/places';
 
 // Use a simplified local interface that aligns with requirements and can be mapped to domain types
 // or import the domain type if it fits perfectly.
@@ -20,6 +19,7 @@ export interface LabResponseItem {
     types: string[];
     phone_number?: string;
     website?: string;
+    google_maps_url?: string;
 }
 
 export async function GET(request: Request) {
@@ -74,7 +74,7 @@ export async function GET(request: Request) {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
-                'X-Goog-FieldMask': 'places.name,places.displayName,places.formattedAddress,places.id,places.location,places.rating,places.userRatingCount,places.businessStatus,places.types,places.regularOpeningHours.openNow,nextPageToken'
+                'X-Goog-FieldMask': 'places.name,places.displayName,places.formattedAddress,places.id,places.location,places.rating,places.userRatingCount,places.businessStatus,places.types,places.regularOpeningHours.openNow,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,nextPageToken'
             },
             body: JSON.stringify(requestBody)
         });
@@ -112,27 +112,10 @@ export async function GET(request: Request) {
             places = places.filter((place: any) => (place.rating || 0) >= minRating);
         }
 
-        const enrichedPlaces = await Promise.all(places.map(async (place: any) => {
-            try {
-                const detailsResponse = await fetch(`${DETAILS_BASE_URL}/${place.name}?fields=internationalPhoneNumber,websiteUri`, {
-                    headers: {
-                        'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
-                        'X-Goog-FieldMask': 'internationalPhoneNumber,websiteUri'
-                    }
-                });
-
-                if (detailsResponse.ok) {
-                    const details = await detailsResponse.json();
-                    return { ...place, ...details };
-                }
-                return place;
-            } catch (e) {
-                console.error(`Failed to fetch details for ${place.name}`, e);
-                return place;
-            }
-        }));
-
-        const formattedLabs: LabResponseItem[] = enrichedPlaces.map((place: any) => ({
+        // Contact fields come straight from the search response (the old
+        // per-place details enrichment built a malformed URL and always
+        // failed silently, leaving every lab without a phone number).
+        const formattedLabs: LabResponseItem[] = places.map((place: any) => ({
             id: place.id || place.name.split('/').pop(),
             name: place.displayName?.text || place.name,
             formatted_address: place.formattedAddress,
@@ -143,8 +126,9 @@ export async function GET(request: Request) {
             open_now: place.regularOpeningHours?.openNow,
             business_status: place.businessStatus,
             types: place.types || [],
-            phone_number: place.internationalPhoneNumber,
-            website: place.websiteUri
+            phone_number: place.internationalPhoneNumber || place.nationalPhoneNumber,
+            website: place.websiteUri,
+            google_maps_url: place.googleMapsUri
         }));
 
         return NextResponse.json({

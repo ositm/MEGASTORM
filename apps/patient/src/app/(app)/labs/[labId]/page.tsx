@@ -7,6 +7,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { Lab, LabTest } from '@lablink/core';
 import { ArrowLeft, MapPin, Phone, Clock, Star, Beaker, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getWhatsAppLink } from '@/utils/whatsapp';
 import Link from 'next/link';
 
 export default function LabProfilePage() {
@@ -186,11 +187,7 @@ export default function LabProfilePage() {
                                         variant="outline"
                                         size="sm"
                                         className="text-green-600 border-green-600 hover:bg-green-50"
-                                        onClick={() => {
-                                            const cleanPhone = lab.phone!.replace(/\D/g, '');
-                                            const phoneWithCode = cleanPhone.startsWith('234') ? cleanPhone : `234${cleanPhone.replace(/^0/, '')}`;
-                                            window.open(`https://wa.me/${phoneWithCode}`, '_blank');
-                                        }}
+                                        onClick={() => window.open(getWhatsAppLink(lab.phone!, `Hello ${lab.name}, I found you on LabLink and would like to book a test.`), '_blank')}
                                     >
                                         <MessageCircle className="h-4 w-4 mr-2" />
                                         WhatsApp
