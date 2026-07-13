@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar'; // Assuming this exists, if not I'll use a simple input or basic react-day-picker if installed
 import { Lab, TestPackage, MedicalTest, OrderType } from '@lablink/core';
+import { DEFAULT_TESTS, DEFAULT_PACKAGES } from '@/data/default-tests';
 import { googleCalendarUrl, outlookCalendarUrl, downloadIcs } from '@/utils/calendar';
 
 function BookingForm() {
@@ -48,21 +49,32 @@ function BookingForm() {
             if (!firestore) return;
             try {
                 if (packageId) {
-                    const docRef = doc(firestore, 'testPackages', packageId);
-                    const snap = await getDoc(docRef);
+                    const snap = await getDoc(doc(firestore, 'testPackages', packageId));
                     if (snap.exists()) setItem({ id: snap.id, ...snap.data() } as TestPackage);
+                    // Fall back to the static catalog the tests UI renders from.
+                    else setItem(DEFAULT_PACKAGES.find((p) => p.id === packageId) ?? null);
                 } else if (testId) {
-                    const docRef = doc(firestore, 'labTests', testId);
-                    const snap = await getDoc(docRef);
+                    const snap = await getDoc(doc(firestore, 'labTests', testId));
                     if (snap.exists()) setItem({ id: snap.id, ...snap.data() } as MedicalTest);
+                    else setItem(DEFAULT_TESTS.find((t) => t.id === testId) ?? null);
                 }
 
                 if (labId) {
-                    const labRef = doc(firestore, 'labs', labId);
-                    const labSnap = await getDoc(labRef);
+                    const labSnap = await getDoc(doc(firestore, 'labs', labId));
                     if (labSnap.exists()) {
                         setSelectedLab({ id: labSnap.id, ...labSnap.data() } as Lab);
                         setStep(2); // Skip to Date/Time if lab is pre-selected
+                    } else {
+                        // Google Places labs aren't in Firestore — resolve via the API.
+                        try {
+                            const res = await fetch(`/api/labs/${labId}`);
+                            if (res.ok) {
+                                setSelectedLab((await res.json()) as Lab);
+                                setStep(2);
+                            }
+                        } catch (e) {
+                            console.error('Could not resolve selected lab:', e);
+                        }
                     }
                 }
             } catch (e) {
@@ -125,7 +137,7 @@ function BookingForm() {
                 labId: selectedLab.id,
                 labName: selectedLab.name,
                 type: collectionType,
-                items: [{ testId: item.id, name: item.name, price: (item as any).price || 0 }],
+                items: [{ testId: item.id, name: item.name, price: (item as any).price ?? (item as any).estimatedPrice ?? 0 }],
                 scheduledFor: bookingDate.toISOString(),
                 ...(collectionType === 'home_collection' ? { address: address.trim() } : {}),
             });
@@ -374,7 +386,9 @@ function BookingForm() {
                                     <span className="text-gray-600 font-bold">Total Price</span>
                                     <span className="font-bold text-blue-600">
                                         {/* Handle price display safely */}
-                                        {(item as any).price ? `₦${(item as any).price.toLocaleString()}` : 'Contact Lab'}
+                                        {((item as any).price ?? (item as any).estimatedPrice)
+                                            ? `₦${((item as any).price ?? (item as any).estimatedPrice).toLocaleString()}`
+                                            : 'Contact Lab'}
                                     </span>
                                 </div>
                             </div>
