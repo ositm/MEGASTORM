@@ -33,6 +33,13 @@ service firebase.storage {
       allow delete: if isSignedIn() && (request.auth.uid == userId || isLabStaff());
     }
 
+    // Courier verification documents (government ID, driver's license).
+    match /couriers/{userId}/documents/{fileName} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidResultFile();
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+
     // Collector verification documents (government ID, license, qualifications).
     // The collector uploads their own; only they and platform admins can read.
     match /collectors/{userId}/documents/{fileName} {

@@ -3,23 +3,19 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase/FirebaseProvider';
-import { useUserProfile } from '@/hooks/use-user-profile';
 
-// UX guard only — Firestore rules enforce actual access by custom claim.
+// Any signed-in user may reach the dispatch area (to apply); the deliveries
+// view itself gates on the dispatch claim, and rules enforce data access.
 export default function DispatchLayout({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
-    const { profile, loading: profileLoading } = useUserProfile();
     const router = useRouter();
 
-    const authorized = profile?.role === 'dispatch' || profile?.role === 'admin';
-
     useEffect(() => {
-        if (isUserLoading || profileLoading) return;
+        if (isUserLoading) return;
         if (!user) router.push('/auth/signin');
-        else if (!authorized) router.push('/home');
-    }, [user, isUserLoading, profileLoading, authorized, router]);
+    }, [user, isUserLoading, router]);
 
-    if (isUserLoading || profileLoading || !user || !authorized) {
+    if (isUserLoading || !user) {
         return (
             <div className="flex h-screen items-center justify-center bg-gray-50">
                 <div className="h-14 w-14 animate-spin rounded-full border-4 border-solid border-blue-600 border-t-transparent"></div>

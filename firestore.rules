@@ -134,6 +134,27 @@ service cloud.firestore {
       }
     }
 
+    // ---------- Couriers (dispatch onboarding) ----------
+    // Same self-service model as collectors; the dispatch claim is granted
+    // only by the server/admin on approval.
+    match /couriers/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid)
+        && request.resource.data.verificationStatus == 'unverified';
+      allow update: if isAdmin()
+        || (isOwner(uid)
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rating'])
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['verificationStatus'])
+                || request.resource.data.verificationStatus == 'pending_review'));
+      allow delete: if isAdmin();
+
+      match /documents/{docId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create: if isOwner(uid) && request.resource.data.status == 'pending';
+        allow update, delete: if isAdmin();
+      }
+    }
+
     // ---------- Jobs (home-collection work) ----------
     // Written only by the server (Admin SDK). Collectors see open jobs and
     // their own; the patient sees the job for their order (tracking).

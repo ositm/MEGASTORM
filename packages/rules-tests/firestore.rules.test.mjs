@@ -178,6 +178,15 @@ test('a collector cannot read another collector\'s profile or documents', async 
     await assertFails(collectorB().collection('collectors').doc('collector-a').collection('documents').doc('doc-1').get());
 });
 
+test('courier onboarding: self create unverified + submit, never self-verify; cross-read blocked', async () => {
+    await assertSucceeds(dispatchA().collection('couriers').doc('dispatch-a').set({ uid: 'dispatch-a', verificationStatus: 'unverified' }));
+    await assertSucceeds(dispatchA().collection('couriers').doc('dispatch-a').update({ verificationStatus: 'pending_review' }));
+    await assertFails(dispatchA().collection('couriers').doc('dispatch-a').update({ verificationStatus: 'verified' }));
+    await assertSucceeds(dispatchA().collection('couriers').doc('dispatch-a').collection('documents').add({ type: 'government_id', status: 'pending', fileUrl: 'z' }));
+    await assertFails(dispatchA().collection('couriers').doc('dispatch-a').collection('documents').add({ type: 'government_id', status: 'approved', fileUrl: 'z' }));
+    await assertFails(collectorA().collection('couriers').doc('dispatch-a').get());
+});
+
 // ---------- lab staff roster ----------
 test('lab staff roster is readable by the lab admin, not others; never client-writable', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {

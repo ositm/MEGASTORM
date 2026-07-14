@@ -1,16 +1,59 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useDispatchJobs, JobRow } from '@/hooks/use-dispatch-jobs';
+import { useCourierProfile } from '@/hooks/use-courier-profile';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { useUser } from '@/firebase/FirebaseProvider';
 import { advanceJobViaApi } from '@/lib/api-client';
 import { JOB_ACTION_LABELS } from '@lablink/core';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Package, MapPin, Building2, Loader2, CheckCircle } from 'lucide-react';
+import { Package, MapPin, Building2, Loader2, CheckCircle, Truck, Clock, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function DispatchPage() {
+export default function DispatchHomePage() {
+    const { profile: userProfile, loading: roleLoading } = useUserProfile();
+    const { profile: courierProfile, loading: courierLoading } = useCourierProfile();
+
+    if (roleLoading || courierLoading) {
+        return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>;
+    }
+
+    if (userProfile?.role === 'dispatch' || userProfile?.role === 'admin') {
+        return <Deliveries />;
+    }
+
+    const status = courierProfile?.verificationStatus;
+    return (
+        <div className="max-w-lg mx-auto text-center py-12 space-y-4">
+            {status === 'pending_review' ? (
+                <>
+                    <Clock className="h-14 w-14 text-yellow-500 mx-auto" />
+                    <h1 className="text-2xl font-bold text-gray-900">Application under review</h1>
+                    <p className="text-gray-500">We're reviewing your documents; you'll be able to take deliveries once approved.</p>
+                </>
+            ) : status === 'rejected' ? (
+                <>
+                    <XCircle className="h-14 w-14 text-red-500 mx-auto" />
+                    <h1 className="text-2xl font-bold text-gray-900">Application not approved</h1>
+                    <p className="text-gray-500">Your application wasn't approved. Please contact support or re-apply.</p>
+                    <Button asChild><Link href="/dispatch/register">Re-apply</Link></Button>
+                </>
+            ) : (
+                <>
+                    <Truck className="h-14 w-14 text-blue-600 mx-auto" />
+                    <h1 className="text-2xl font-bold text-gray-900">Become a LabLink Courier</h1>
+                    <p className="text-gray-500">Deliver samples between collectors and labs. You'll need your government ID and driver's license.</p>
+                    <Button asChild><Link href="/dispatch/register">Start application</Link></Button>
+                </>
+            )}
+        </div>
+    );
+}
+
+function Deliveries() {
     const { available, mine, loading } = useDispatchJobs();
     const { user } = useUser();
     const [busyId, setBusyId] = useState<string | null>(null);

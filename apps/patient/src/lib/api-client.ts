@@ -76,3 +76,11 @@ export function addLabStaffViaApi(user: User, email: string): Promise<{ ok: true
 export function removeLabStaffViaApi(user: User, uid: string): Promise<{ ok: true }> {
     return apiPost(user, '/api/lab/staff', { action: 'remove', uid });
 }
+
+export function decideCourierViaApi(
+    user: User,
+    uid: string,
+    action: 'approve' | 'reject'
+): Promise<{ ok: true }> {
+    return apiPost(user, `/api/admin/couriers/${uid}`, { action });
+}
