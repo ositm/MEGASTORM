@@ -38,6 +38,10 @@ service cloud.firestore {
       return hasRole('collector');
     }
 
+    function isDispatch() {
+      return hasRole('dispatch');
+    }
+
     // ---------- Users ----------
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
@@ -138,6 +142,9 @@ service cloud.firestore {
         || (isCollector()
             && (resource.data.status in ['pending', 'offered']
                 || resource.data.collectorId == request.auth.uid))
+        || (isDispatch()
+            && (resource.data.status == 'handed_over'
+                || resource.data.dispatchId == request.auth.uid))
         || isOwner(resource.data.patientId);
       // The assigned collector may update ONLY their live location; all
       // custody-affecting fields remain server-only (Admin SDK).

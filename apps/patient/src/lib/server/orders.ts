@@ -112,7 +112,11 @@ export async function appendOrderEvent(
             caller.role === 'system' ||
             (caller.role === 'patient' && order.patientId === caller.uid) ||
             ((caller.role === 'lab_admin' || caller.role === 'lab_staff') && order.labId === caller.labId) ||
-            (caller.role === 'collector' && order.collectorId === caller.uid);
+            (caller.role === 'collector' && order.collectorId === caller.uid) ||
+            // Dispatch couriers carry samples between collector and lab.
+            // roleMayEmit + the state machine restrict them to DISPATCH_DELIVERED
+            // from HANDED_TO_DISPATCH, so order-party scoping isn't required.
+            caller.role === 'dispatch';
         if (!inScope) throw new HttpError(403, 'This order is not yours to update');
 
         if (!canTransition(order.status, type)) {

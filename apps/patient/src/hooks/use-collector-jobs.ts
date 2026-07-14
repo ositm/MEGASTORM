@@ -45,9 +45,10 @@ export function useCollectorJobs() {
         };
     }, [firestore, user]);
 
-    // Active jobs the collector still needs to work (not yet collected).
+    // Active jobs the collector still needs to work. Keep 'collected' (so they
+    // can hand over to dispatch); drop terminal states.
     const activeMine = mine
-        .filter((j) => j.status !== 'collected' && j.status !== 'handed_over' && j.status !== 'cancelled')
+        .filter((j) => !['handed_over', 'delivered', 'cancelled'].includes(j.status))
         .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
 
     return { open, mine: activeMine, loading };

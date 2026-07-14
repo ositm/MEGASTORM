@@ -23,7 +23,7 @@ export async function getAuthenticatedUser(req: NextRequest): Promise<DecodedIdT
 /** Role from custom claims; accounts without a role claim act as patients. */
 export function callerRole(decoded: DecodedIdToken): ActorRole {
     const role = decoded.role;
-    if (role === 'admin' || role === 'lab_admin' || role === 'lab_staff' || role === 'collector') {
+    if (role === 'admin' || role === 'lab_admin' || role === 'lab_staff' || role === 'collector' || role === 'dispatch') {
         return role;
     }
     return 'patient';

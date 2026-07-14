@@ -44,8 +44,14 @@ export async function advanceJob(
     jobId: string,
     action: JobAction
 ): Promise<void> {
-    if (caller.role !== 'collector' && caller.role !== 'admin') {
-        throw new HttpError(403, 'Only collectors can work jobs');
+    const isCollectorAction = action === 'accept' || action === 'arrive' || action === 'collect' || action === 'handover';
+    const isDispatchAction = action === 'dispatch_deliver';
+
+    if (isCollectorAction && caller.role !== 'collector' && caller.role !== 'admin') {
+        throw new HttpError(403, 'Only collectors can work this job');
+    }
+    if (isDispatchAction && caller.role !== 'dispatch' && caller.role !== 'admin') {
+        throw new HttpError(403, 'Only dispatch couriers can deliver samples');
     }
 
     const db = adminDb();
@@ -55,6 +61,7 @@ export async function advanceJob(
     const job = jobSnap.data()!;
     const now = FieldValue.serverTimestamp();
 
+    // Collector claims an open job.
     if (action === 'accept') {
         if (!isJobOpen(job.status) || job.collectorId) {
             throw new HttpError(409, 'This job is no longer available');
@@ -67,7 +74,22 @@ export async function advanceJob(
         return;
     }
 
-    // On-site steps require the assigned collector (admins may step in).
+    // Dispatch delivers a handed-over sample (claims it at delivery time).
+    if (action === 'dispatch_deliver') {
+        if (job.status !== 'handed_over') {
+            throw new HttpError(409, 'This job is not awaiting delivery');
+        }
+        await appendOrderEvent(
+            { uid: caller.uid, role: caller.role === 'admin' ? 'admin' : 'dispatch' },
+            job.orderId,
+            'DISPATCH_DELIVERED',
+            { dispatchId: caller.uid }
+        );
+        await jobRef.update({ dispatchId: caller.uid, status: 'delivered', updatedAt: now });
+        return;
+    }
+
+    // Remaining collector on-site steps require the assigned collector.
     if (job.collectorId !== caller.uid && caller.role !== 'admin') {
         throw new HttpError(403, 'This job is not assigned to you');
     }

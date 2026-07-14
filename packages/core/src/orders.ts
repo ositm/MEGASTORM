@@ -30,7 +30,7 @@ export type OrderEventType = (typeof ORDER_EVENT_TYPES)[number];
 /** Order.status mirrors the latest event type. */
 export type OrderStatus = OrderEventType;
 
-export type ActorRole = 'patient' | 'collector' | 'lab_admin' | 'lab_staff' | 'admin' | 'system';
+export type ActorRole = 'patient' | 'collector' | 'dispatch' | 'lab_admin' | 'lab_staff' | 'admin' | 'system';
 
 export type OrderType = 'walk_in' | 'home_collection';
 
@@ -111,7 +111,7 @@ export const EVENT_ACTOR_ROLES: Record<OrderEventType, readonly ActorRole[]> = {
     COLLECTOR_ARRIVED: ['collector'],
     SAMPLE_COLLECTED: ['collector'],
     HANDED_TO_DISPATCH: ['collector'],
-    DISPATCH_DELIVERED: ['system', 'admin'],
+    DISPATCH_DELIVERED: ['dispatch', 'admin'],
     LAB_RECEIVED: ['lab_admin', 'lab_staff'],
     TESTING_STARTED: ['lab_admin', 'lab_staff'],
     TESTING_COMPLETED: ['lab_admin', 'lab_staff'],

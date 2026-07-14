@@ -40,7 +40,8 @@ export const JOB_STATUSES = [
     'accepted', // a collector took it
     'arrived', // collector reached the patient
     'collected', // sample taken
-    'handed_over', // passed to dispatch/lab
+    'handed_over', // passed to dispatch, awaiting pickup/delivery
+    'delivered', // dispatch delivered to the lab
     'cancelled',
 ] as const;
 
@@ -55,6 +56,8 @@ export interface Job {
     address?: string;
     location?: { latitude: number; longitude: number };
     collectorId?: string | null;
+    /** Assigned dispatch courier, set when a handed-over job is picked up. */
+    dispatchId?: string | null;
     /** Live collector position, updated by the collector during an active job. */
     collectorLocation?: { latitude: number; longitude: number };
     locationUpdatedAt?: Timestamp;
@@ -76,27 +79,33 @@ export function isJobOpen(status: JobStatus): boolean {
     return OPEN_JOB_STATUSES.includes(status);
 }
 
-// Collector-driven job actions and how each maps to a job status and the
-// order custody event it records. `accept` is handled specially (assignment).
-// The collector currently hands the sample directly to the lab; the separate
-// dispatch leg (HANDED_TO_DISPATCH / DISPATCH_DELIVERED) arrives with the
-// dispatch flow in a later milestone.
-export type JobAction = 'accept' | 'arrive' | 'collect';
+// Job actions and how each maps to a job status and the order custody event
+// it records. `accept` and `dispatch_pickup` are handled specially (they
+// assign a worker rather than emit a custody event via the shared map).
+//
+// The collector may hand a collected sample directly to the lab (lab posts
+// LAB_RECEIVED) OR hand it to a dispatch courier (`handover`); a dispatch then
+// delivers it to the lab (`dispatch_deliver`).
+export type JobAction = 'accept' | 'arrive' | 'collect' | 'handover' | 'dispatch_deliver';
 
-export const JOB_ACTIONS = ['accept', 'arrive', 'collect'] as const;
+export const JOB_ACTIONS = ['accept', 'arrive', 'collect', 'handover', 'dispatch_deliver'] as const;
 
 export const JOB_ACTION_MAP: Record<
     Exclude<JobAction, 'accept'>,
-    { jobStatus: JobStatus; orderEvent: 'COLLECTOR_ARRIVED' | 'SAMPLE_COLLECTED' }
+    { jobStatus: JobStatus; orderEvent: 'COLLECTOR_ARRIVED' | 'SAMPLE_COLLECTED' | 'HANDED_TO_DISPATCH' | 'DISPATCH_DELIVERED' }
 > = {
     arrive: { jobStatus: 'arrived', orderEvent: 'COLLECTOR_ARRIVED' },
     collect: { jobStatus: 'collected', orderEvent: 'SAMPLE_COLLECTED' },
+    handover: { jobStatus: 'handed_over', orderEvent: 'HANDED_TO_DISPATCH' },
+    dispatch_deliver: { jobStatus: 'delivered', orderEvent: 'DISPATCH_DELIVERED' },
 };
 
 export const JOB_ACTION_LABELS: Record<JobAction, string> = {
     accept: 'Accept job',
     arrive: 'Mark arrived',
     collect: 'Mark sample collected',
+    handover: 'Hand to dispatch',
+    dispatch_deliver: 'Mark delivered to lab',
 };
 
 /** The next action a collector can take on a job in the given status. */
@@ -104,5 +113,15 @@ export function nextJobAction(status: JobStatus): JobAction | null {
     if (isJobOpen(status)) return 'accept';
     if (status === 'accepted') return 'arrive';
     if (status === 'arrived') return 'collect';
+    if (status === 'collected') return 'handover'; // optional dispatch route
+    return null;
+}
+
+/** Job statuses a dispatch courier can pick up (awaiting delivery). */
+export const DISPATCHABLE_JOB_STATUSES: readonly JobStatus[] = ['handed_over'];
+
+/** The next action a dispatch courier can take on a job. */
+export function nextDispatchAction(status: JobStatus): JobAction | null {
+    if (status === 'handed_over') return 'dispatch_deliver';
     return null;
 }

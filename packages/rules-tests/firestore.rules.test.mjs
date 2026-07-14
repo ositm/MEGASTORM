@@ -17,6 +17,7 @@ const lab1Admin = () => env.authenticatedContext('lab1-admin', { role: 'lab_admi
 const platformAdmin = () => env.authenticatedContext('root-admin', { role: 'admin' }).firestore();
 const collectorA = () => env.authenticatedContext('collector-a', { role: 'collector' }).firestore();
 const collectorB = () => env.authenticatedContext('collector-b', { role: 'collector' }).firestore();
+const dispatchA = () => env.authenticatedContext('dispatch-a', { role: 'dispatch' }).firestore();
 
 before(async () => {
     env = await initializeTestEnvironment({
@@ -41,6 +42,7 @@ before(async () => {
         await db.collection('jobs').doc('job-open').set({ orderId: 'ord-a', patientId: PATIENT_A, labId: 'LAB1', status: 'pending', collectorId: null });
         await db.collection('jobs').doc('job-mine').set({ orderId: 'ord-a', patientId: PATIENT_A, labId: 'LAB1', status: 'accepted', collectorId: 'collector-a' });
         await db.collection('jobs').doc('job-other').set({ orderId: 'ord-b', patientId: PATIENT_B, labId: 'LAB2', status: 'accepted', collectorId: 'collector-b' });
+        await db.collection('jobs').doc('job-transit').set({ orderId: 'ord-a', patientId: PATIENT_A, labId: 'LAB1', status: 'handed_over', collectorId: 'collector-a', dispatchId: null });
     });
 });
 
@@ -204,6 +206,14 @@ test('no client can write custody fields or create/delete jobs (server-only)', a
     await assertFails(collectorA().collection('jobs').doc('job-open').update({ status: 'accepted', collectorId: 'collector-a' }));
     await assertFails(collectorA().collection('jobs').add({ orderId: 'x', patientId: PATIENT_A, labId: 'LAB1', status: 'pending' }));
     await assertFails(platformAdmin().collection('jobs').doc('job-open').update({ status: 'cancelled' }));
+});
+
+test('dispatch can read handed-over jobs but not other in-progress jobs', async () => {
+    await assertSucceeds(dispatchA().collection('jobs').doc('job-transit').get());
+    await assertFails(dispatchA().collection('jobs').doc('job-mine').get());
+    await assertFails(dispatchA().collection('jobs').doc('job-open').get());
+    // Dispatch still cannot write jobs directly (server-only).
+    await assertFails(dispatchA().collection('jobs').doc('job-transit').update({ status: 'delivered' }));
 });
 
 test('the assigned collector may update only their live location', async () => {
