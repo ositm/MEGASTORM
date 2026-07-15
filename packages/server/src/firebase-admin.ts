@@ -1,6 +1,5 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import { firebaseConfig } from '@/firebase/config';
 
 // FIREBASE_SERVICE_ACCOUNT holds the base64-encoded service-account JSON
 // (locally in .env.local, on Vercel as an env var). Without it the app can
@@ -13,7 +12,7 @@ export function adminApp(): App {
             initializeApp({ credential: cert(creds), projectId: creds.project_id });
         } else {
             console.warn('FIREBASE_SERVICE_ACCOUNT not set — Admin SDK writes will fail.');
-            initializeApp({ projectId: firebaseConfig.projectId });
+            initializeApp({ projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'lablink-df67e' });
         }
     }
     return getApps()[0];

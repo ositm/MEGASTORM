@@ -1,0 +1,20 @@
+{
+  "name": "@lablink/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LabLink Admin-SDK service layer shared by app route handlers",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lablink/core": "*",
+    "firebase-admin": "^13.6.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

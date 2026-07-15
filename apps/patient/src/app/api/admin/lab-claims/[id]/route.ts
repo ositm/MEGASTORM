@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { callerRole, getAuthenticatedUser } from '@/lib/server/auth';
-import { decideLabClaim } from '@/lib/server/lab-claims';
-import { HttpError } from '@/lib/server/orders';
+import { callerRole, getAuthenticatedUser } from '@lablink/server/auth';
+import { decideLabClaim } from '@lablink/server/lab-claims';
+import { HttpError } from '@lablink/server/orders';
 
 const bodySchema = z.object({ action: z.enum(['approve', 'reject']) });
 

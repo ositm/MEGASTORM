@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/lib/server/auth';
+import { getAuthenticatedUser } from '@lablink/server/auth';
 import { firebaseConfig } from '@/firebase/config';
 
 // Only files in our own Storage bucket may be analyzed. This prevents the

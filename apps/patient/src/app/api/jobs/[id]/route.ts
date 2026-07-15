@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { JOB_ACTIONS } from '@lablink/core';
-import { callerRole, getAuthenticatedUser } from '@/lib/server/auth';
-import { advanceJob } from '@/lib/server/jobs';
-import { HttpError } from '@/lib/server/orders';
+import { callerRole, getAuthenticatedUser } from '@lablink/server/auth';
+import { advanceJob } from '@lablink/server/jobs';
+import { HttpError } from '@lablink/server/orders';
 
 const bodySchema = z.object({ action: z.enum(JOB_ACTIONS) });
 

@@ -29,6 +29,9 @@
       ],
       "@lablink/core": [
         "../../packages/core/src/index.ts"
+      ],
+      "@lablink/server/*": [
+        "../../packages/server/src/*.ts"
       ]
     }
   },

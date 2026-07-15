@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/lib/server/auth';
-import { confirmPaymentByReference } from '@/lib/server/payments';
-import { HttpError } from '@/lib/server/orders';
+import { getAuthenticatedUser } from '@lablink/server/auth';
+import { confirmPaymentByReference } from '@lablink/server/payments';
+import { HttpError } from '@lablink/server/orders';
 
 // Called from the Paystack callback page after the patient returns.
 // Confirmation is idempotent, so the webhook and this endpoint are safe to

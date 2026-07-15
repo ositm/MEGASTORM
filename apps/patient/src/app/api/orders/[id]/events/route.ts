@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { callerRole, getAuthenticatedUser } from '@/lib/server/auth';
-import { appendEventSchema, appendOrderEvent, HttpError } from '@/lib/server/orders';
-import { notifyResultReleased } from '@/lib/server/notifications';
+import { callerRole, getAuthenticatedUser } from '@lablink/server/auth';
+import { appendEventSchema, appendOrderEvent, HttpError } from '@lablink/server/orders';
+import { notifyResultReleased } from '@lablink/server/notifications';
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
     try {

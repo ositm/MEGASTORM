@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { callerRole, getAuthenticatedUser } from '@/lib/server/auth';
-import { addLabStaff, removeLabStaff } from '@/lib/server/lab-staff';
-import { HttpError } from '@/lib/server/orders';
+import { callerRole, getAuthenticatedUser } from '@lablink/server/auth';
+import { addLabStaff, removeLabStaff } from '@lablink/server/lab-staff';
+import { HttpError } from '@lablink/server/orders';
 
 const bodySchema = z.union([
     z.object({ action: z.literal('add'), email: z.string().email() }),

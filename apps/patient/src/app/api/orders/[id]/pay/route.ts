@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/lib/server/auth';
-import { initializeOrderPayment } from '@/lib/server/payments';
-import { HttpError } from '@/lib/server/orders';
+import { getAuthenticatedUser } from '@lablink/server/auth';
+import { initializeOrderPayment } from '@lablink/server/payments';
+import { HttpError } from '@lablink/server/orders';
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
     try {

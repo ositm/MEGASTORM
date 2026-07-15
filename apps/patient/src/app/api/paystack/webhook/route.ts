@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyWebhookSignature } from '@/lib/server/paystack';
-import { confirmPaymentByReference } from '@/lib/server/payments';
+import { verifyWebhookSignature } from '@lablink/server/paystack';
+import { confirmPaymentByReference } from '@lablink/server/payments';
 
 // Paystack's authoritative confirmation. Signature is verified against the
 // raw body; confirmation is idempotent with the callback endpoint.

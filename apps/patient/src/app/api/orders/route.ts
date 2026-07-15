@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/lib/server/auth';
-import { createOrder, createOrderSchema, HttpError } from '@/lib/server/orders';
+import { getAuthenticatedUser } from '@lablink/server/auth';
+import { createOrder, createOrderSchema, HttpError } from '@lablink/server/orders';
 
 export async function POST(req: NextRequest) {
     try {
