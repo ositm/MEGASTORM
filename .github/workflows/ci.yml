@@ -35,3 +35,6 @@ jobs:
 
       - name: Build patient app
         run: npm run build
+
+      - name: Build lab app
+        run: npm run build:lab

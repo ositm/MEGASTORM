@@ -8,7 +8,9 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @lablink/patient",
+    "dev:lab": "npm run dev -w @lablink/lab",
     "build": "npm run build -w @lablink/patient",
+    "build:lab": "npm run build -w @lablink/lab",
     "start": "npm run start -w @lablink/patient",
     "lint": "npm run lint -w @lablink/patient",
     "typecheck": "npm run typecheck --workspaces --if-present",

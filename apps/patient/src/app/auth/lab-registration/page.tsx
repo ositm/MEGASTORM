@@ -1,10 +1,19 @@
-import { LabRegistrationForm } from '@/components/auth/lab-registration-form';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
+'use client';
 
-export default function LabRegistrationPage() {
+import { useEffect } from 'react';
+
+// The lab portal moved to its own app (apps/lab). This page survives only to
+// forward old links; NEXT_PUBLIC_LAB_APP_URL points at the deployed portal.
+const LAB_APP_URL = process.env.NEXT_PUBLIC_LAB_APP_URL || 'http://localhost:9003';
+
+export default function LabRegistrationForwarder() {
+    useEffect(() => {
+        window.location.replace(`${LAB_APP_URL}/register`);
+    }, []);
+
     return (
-        <FirebaseClientProvider>
-            <LabRegistrationForm />
-        </FirebaseClientProvider>
+        <div className="flex min-h-screen items-center justify-center">
+            <p className="text-sm text-muted-foreground">Taking you to the LabLink lab portal…</p>
+        </div>
     );
 }

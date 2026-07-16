@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Calendar, Upload, Settings, LogOut, Beaker, ShieldCheck, UserCheck, Users, BarChart3, Truck } from "lucide-react";
+import { LayoutDashboard, LogOut, ShieldCheck, UserCheck, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useFirebase } from "@/firebase/FirebaseProvider";
 import { signOut } from "firebase/auth";
 
+// Lab-facing pages (orders, results, staff, analytics, tests) live in apps/lab.
 const sidebarItems = [
     {
         title: "Dashboard",
@@ -20,16 +21,6 @@ const sidebarItems = [
         icon: ShieldCheck,
     },
     {
-        title: "Orders",
-        href: "/admin/orders",
-        icon: Calendar,
-    },
-    {
-        title: "Analytics",
-        href: "/admin/analytics",
-        icon: BarChart3,
-    },
-    {
         title: "Collectors",
         href: "/admin/collectors",
         icon: UserCheck,
@@ -38,26 +29,6 @@ const sidebarItems = [
         title: "Couriers",
         href: "/admin/couriers",
         icon: Truck,
-    },
-    {
-        title: "Manage Tests",
-        href: "/admin/tests",
-        icon: Beaker,
-    },
-    {
-        title: "Upload Results",
-        href: "/admin/results",
-        icon: Upload,
-    },
-    {
-        title: "Staff",
-        href: "/admin/staff",
-        icon: Users,
-    },
-    {
-        title: "Settings",
-        href: "/admin/settings",
-        icon: Settings,
     },
 ];
 

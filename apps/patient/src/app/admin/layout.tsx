@@ -16,12 +16,13 @@ export default function AdminLayout({
     const { profile, loading: profileLoading } = useUserProfile();
     const router = useRouter();
 
-    const isAuthorized = profile?.role === 'lab_admin' || profile?.role === 'admin';
+    // Lab accounts use apps/lab now; /admin is platform-admin only.
+    const isAuthorized = profile?.role === 'admin';
 
     useEffect(() => {
         if (isUserLoading || profileLoading) return;
         if (!user) {
-            router.push('/auth/lab/signin');
+            router.push('/auth/signin');
         } else if (!isAuthorized) {
             router.push('/home');
         }
