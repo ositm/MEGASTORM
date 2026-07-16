@@ -29,6 +29,7 @@ before(async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
         const db = ctx.firestore();
         await db.collection('labs').doc('LAB1').set({ name: 'Alpha Lab' });
+        await db.collection('labs').doc('LAB2').set({ name: 'Beta Lab' });
         await db.collection('users').doc(PATIENT_A).set({ email: 'a@x.com', firstName: 'A', role: 'user' });
         await db.collection('bookings').doc('bk-a-lab1').set({ userId: PATIENT_A, labId: 'LAB1', status: 'pending', testName: 'FBC' });
         await db.collection('bookings').doc('bk-b-lab2').set({ userId: PATIENT_B, labId: 'LAB2', status: 'pending', testName: 'LFT' });
@@ -145,6 +146,14 @@ test('order and its custody events are readable by owner, owning lab, and admin 
     await assertSucceeds(platformAdmin().collection('orders').doc('ord-a').collection('events').doc('ev-1').get());
     await assertFails(patientB().collection('orders').doc('ord-a').get());
     await assertFails(patientB().collection('orders').doc('ord-a').collection('events').doc('ev-1').get());
+});
+
+test('lab staff edit only the catalog fields of their own lab', async () => {
+    await assertSucceeds(lab1Staff().collection('labs').doc('LAB1')
+        .update({ tests: [{ id: 'fbc', price: 4500 }], availableTestIds: ['fbc'] }));
+    await assertFails(lab1Staff().collection('labs').doc('LAB1').update({ name: 'Renamed Lab' }));
+    await assertFails(lab1Staff().collection('labs').doc('LAB1').update({ verified: true, availableTestIds: ['x'] }));
+    await assertFails(lab1Staff().collection('labs').doc('LAB2').update({ availableTestIds: ['x'] }));
 });
 
 test('lab staff read their own lab\'s orders and events, never another lab\'s', async () => {
