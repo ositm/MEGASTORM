@@ -34,6 +34,13 @@ service cloud.firestore {
         && request.auth.token.labId == labId;
     }
 
+    // Anyone working at the lab: its admin or its staff, scoped to that lab.
+    function isLabMemberFor(labId) {
+      return (isLabAdmin() || hasRole('lab_staff'))
+        && 'labId' in request.auth.token
+        && request.auth.token.labId == labId;
+    }
+
     function isCollector() {
       return hasRole('collector');
     }
@@ -98,13 +105,13 @@ service cloud.firestore {
     // append-only chain of custody with patientId/labId denormalized on.
     match /orders/{orderId} {
       allow read: if isOwner(resource.data.patientId)
-        || isLabAdminFor(resource.data.labId)
+        || isLabMemberFor(resource.data.labId)
         || isAdmin();
       allow write: if false;
 
       match /events/{eventId} {
         allow read: if isOwner(resource.data.patientId)
-          || isLabAdminFor(resource.data.labId)
+          || isLabMemberFor(resource.data.labId)
           || isAdmin();
         allow write: if false;
       }
@@ -180,14 +187,14 @@ service cloud.firestore {
     match /results/{resultId} {
       allow create: if isSignedIn()
         && (request.resource.data.userId == request.auth.uid
-            || isLabAdminFor(request.resource.data.labId)
+            || isLabMemberFor(request.resource.data.labId)
             || isAdmin());
       allow read: if isOwner(resource.data.userId)
-        || isLabAdminFor(resource.data.labId)
+        || isLabMemberFor(resource.data.labId)
         || isAdmin();
       // Owner updates cover AI-analysis status writes from the patient app.
       allow update: if isOwner(resource.data.userId)
-        || isLabAdminFor(resource.data.labId)
+        || isLabMemberFor(resource.data.labId)
         || isAdmin();
       allow delete: if isOwner(resource.data.userId) || isAdmin();
     }

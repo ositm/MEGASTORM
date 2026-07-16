@@ -7,8 +7,8 @@ import { Order } from '@lablink/core';
 export type LabOrder = Order & { id: string };
 
 /**
- * Live orders for the lab portal. lab_admin sees only their own lab's
- * orders (rules enforce it); platform admin sees all. Sorted newest first.
+ * Live orders for the lab portal. lab_admin and lab_staff see only their
+ * own lab's orders (rules enforce it); platform admin sees all. Newest first.
  */
 export function useLabOrders() {
     const { firestore } = useFirebase();
@@ -21,7 +21,7 @@ export function useLabOrders() {
 
         const ordersRef = collection(firestore, 'orders');
         const q =
-            profile?.role === 'lab_admin' && profile.labId
+            (profile?.role === 'lab_admin' || profile?.role === 'lab_staff') && profile.labId
                 ? query(ordersRef, where('labId', '==', profile.labId))
                 : profile?.role === 'admin'
                   ? query(ordersRef)

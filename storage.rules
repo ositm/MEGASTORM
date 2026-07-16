@@ -11,7 +11,9 @@ service firebase.storage {
     function isLabStaff() {
       return isSignedIn()
         && 'role' in request.auth.token
-        && (request.auth.token.role == 'lab_admin' || request.auth.token.role == 'admin');
+        && (request.auth.token.role == 'lab_admin'
+            || request.auth.token.role == 'lab_staff'
+            || request.auth.token.role == 'admin');
     }
 
     function isAdmin() {

@@ -14,6 +14,7 @@ const anon = () => env.unauthenticatedContext().firestore();
 const patientA = () => env.authenticatedContext(PATIENT_A).firestore();
 const patientB = () => env.authenticatedContext(PATIENT_B).firestore();
 const lab1Admin = () => env.authenticatedContext('lab1-admin', { role: 'lab_admin', labId: 'LAB1' }).firestore();
+const lab1Staff = () => env.authenticatedContext('lab1-staff', { role: 'lab_staff', labId: 'LAB1' }).firestore();
 const platformAdmin = () => env.authenticatedContext('root-admin', { role: 'admin' }).firestore();
 const collectorA = () => env.authenticatedContext('collector-a', { role: 'collector' }).firestore();
 const collectorB = () => env.authenticatedContext('collector-b', { role: 'collector' }).firestore();
@@ -34,6 +35,7 @@ before(async () => {
         await db.collection('results').doc('res-a').set({ userId: PATIENT_A, labId: 'LAB1', status: 'ready', fileUrl: 'x' });
         await db.collection('reminders').doc('rem-a').set({ userId: PATIENT_A, title: 'take sample' });
         await db.collection('orders').doc('ord-a').set({ patientId: PATIENT_A, labId: 'LAB1', status: 'ORDER_CREATED', amount: 5000 });
+        await db.collection('orders').doc('ord-b').set({ patientId: PATIENT_B, labId: 'LAB2', status: 'ORDER_CREATED', amount: 3000 });
         await db.collection('orders').doc('ord-a').collection('events').doc('ev-1')
             .set({ type: 'ORDER_CREATED', patientId: PATIENT_A, labId: 'LAB1', prevEventId: null });
         await db.collection('collectors').doc('collector-a').set({ uid: 'collector-a', verificationStatus: 'unverified', rating: 5 });
@@ -143,6 +145,19 @@ test('order and its custody events are readable by owner, owning lab, and admin 
     await assertSucceeds(platformAdmin().collection('orders').doc('ord-a').collection('events').doc('ev-1').get());
     await assertFails(patientB().collection('orders').doc('ord-a').get());
     await assertFails(patientB().collection('orders').doc('ord-a').collection('events').doc('ev-1').get());
+});
+
+test('lab staff read their own lab\'s orders and events, never another lab\'s', async () => {
+    await assertSucceeds(lab1Staff().collection('orders').doc('ord-a').get());
+    await assertSucceeds(lab1Staff().collection('orders').doc('ord-a').collection('events').doc('ev-1').get());
+    await assertSucceeds(lab1Staff().collection('orders').where('labId', '==', 'LAB1').get());
+    await assertFails(lab1Staff().collection('orders').doc('ord-b').get());
+});
+
+test('lab staff can create results for their own lab only, and never write orders', async () => {
+    await assertSucceeds(lab1Staff().collection('results').add({ userId: PATIENT_A, labId: 'LAB1', status: 'ready' }));
+    await assertFails(lab1Staff().collection('results').add({ userId: PATIENT_B, labId: 'LAB2', status: 'ready' }));
+    await assertFails(lab1Staff().collection('orders').doc('ord-a').update({ status: 'LAB_RECEIVED' }));
 });
 
 test('no client can write orders or custody events — not even admins', async () => {
