@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, CheckCircle, DollarSign, Loader2 } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, DollarSign, Loader2, ShieldCheck, UserCheck, Truck, Navigation } from 'lucide-react';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useLabOrders } from '@/hooks/use-lab-orders';
+import { useAdminOps } from '@/hooks/use-admin-ops';
 import { useFirebase } from '@/firebase/FirebaseProvider';
 import { doc, getDoc } from 'firebase/firestore';
 import { ORDER_STATUS_LABELS, OrderStatus } from '@lablink/core';
@@ -22,6 +24,7 @@ export default function AdminDashboardPage() {
     const { profile } = useUserProfile();
     const { firestore } = useFirebase();
     const { orders, loading } = useLabOrders();
+    const { stats: ops } = useAdminOps();
     const [labName, setLabName] = useState<string>('');
 
     useEffect(() => {
@@ -58,6 +61,14 @@ export default function AdminDashboardPage() {
         { title: 'Completed', value: metrics.completed.toLocaleString(), icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-100' },
     ];
 
+    // Verification queues awaiting a decision + samples in the field.
+    const attention = [
+        { title: 'Lab access requests', value: ops.pendingLabClaims, icon: ShieldCheck, href: '/admin/labs' },
+        { title: 'Collectors to verify', value: ops.pendingCollectors, icon: UserCheck, href: '/admin/collectors' },
+        { title: 'Couriers to verify', value: ops.pendingCouriers, icon: Truck, href: '/admin/couriers' },
+        { title: 'Samples in transit', value: ops.jobsInTransit, icon: Navigation, href: null },
+    ];
+
     return (
         <div className="space-y-8">
             <div>
@@ -87,6 +98,33 @@ export default function AdminDashboardPage() {
                                 </CardContent>
                             </Card>
                         ))}
+                    </div>
+
+                    <div>
+                        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-400 mb-3">Needs attention</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {attention.map((item) => {
+                                const card = (
+                                    <Card className={`border-none shadow-sm ${item.href ? 'transition-shadow hover:shadow-md' : ''} ${item.value > 0 ? 'ring-1 ring-amber-300' : ''}`}>
+                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                            <CardTitle className="text-sm font-medium text-gray-500">{item.title}</CardTitle>
+                                            <div className={`p-2 rounded-lg ${item.value > 0 ? 'bg-amber-100' : 'bg-gray-100'}`}>
+                                                <item.icon className={`h-4 w-4 ${item.value > 0 ? 'text-amber-600' : 'text-gray-400'}`} />
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold text-gray-900">{item.value.toLocaleString()}</div>
+                                            {item.href && item.value > 0 && (
+                                                <p className="text-xs text-amber-600 mt-1">Review now →</p>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                );
+                                return item.href
+                                    ? <Link key={item.title} href={item.href}>{card}</Link>
+                                    : <div key={item.title}>{card}</div>;
+                            })}
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
