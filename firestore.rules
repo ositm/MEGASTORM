@@ -222,7 +222,17 @@ service cloud.firestore {
       allow update, delete: if isOwner(resource.data.userId);
     }
 
-    // ---------- Lab ownership claims ----------
+    // ---------- Partner (lab) applications ----------
+    // Written exclusively by the server (Admin SDK bypasses these rules), which
+    // validates the submission, files the case and emails the ops inbox.
+    // Applicants may read their own case to see its status; admins read the
+    // whole review queue.
+    match /partner_applications/{applicationId} {
+      allow read: if isOwner(resource.data.applicantUid) || isAdmin();
+      allow write: if false;
+    }
+
+    // ---------- Lab ownership claims (legacy — superseded by applications) ----------
     match /lab_claims/{claimId} {
       allow create: if isSignedIn()
         && request.resource.data.userId == request.auth.uid

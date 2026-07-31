@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, LogOut, ShieldCheck, UserCheck, Truck } from "lucide-react";
+import { LayoutDashboard, LogOut, ShieldCheck, UserCheck, Truck, Handshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useFirebase } from "@/firebase/FirebaseProvider";
@@ -14,6 +14,11 @@ const sidebarItems = [
         title: "Dashboard",
         href: "/admin/dashboard",
         icon: LayoutDashboard,
+    },
+    {
+        title: "Partner Applications",
+        href: "/admin/partners",
+        icon: Handshake,
     },
     {
         title: "Manage Labs",

@@ -50,6 +50,17 @@ service firebase.storage {
       allow delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
     }
 
+    // Partner application documents (CAC certificate, MLSCN licences, permits,
+    // accreditations, facility photo). Uploaded by the applicant before the
+    // application is submitted; readable by them and platform admins. Updates
+    // are denied so a submitted document cannot be swapped after review starts.
+    match /partner_applications/{userId}/{fileName} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidResultFile();
+      allow update: if false;
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+
     // Legacy self-upload path (pre-hardening files). Read-only; existing
     // documents keep working via their tokened download URLs.
     match /uploads/{fileName} {

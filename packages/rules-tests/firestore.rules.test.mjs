@@ -46,6 +46,10 @@ before(async () => {
         await db.collection('jobs').doc('job-mine').set({ orderId: 'ord-a', patientId: PATIENT_A, labId: 'LAB1', status: 'accepted', collectorId: 'collector-a' });
         await db.collection('jobs').doc('job-other').set({ orderId: 'ord-b', patientId: PATIENT_B, labId: 'LAB2', status: 'accepted', collectorId: 'collector-b' });
         await db.collection('jobs').doc('job-transit').set({ orderId: 'ord-a', patientId: PATIENT_A, labId: 'LAB1', status: 'handed_over', collectorId: 'collector-a', dispatchId: null });
+        await db.collection('partner_applications').doc('app-a').set({
+            reference: 'LL-PA-202607-ABC123', status: 'submitted',
+            applicantUid: PATIENT_A, applicantEmail: 'a@x.com',
+        });
     });
 });
 
@@ -209,6 +213,21 @@ test('courier onboarding: self create unverified + submit, never self-verify; cr
     await assertSucceeds(dispatchA().collection('couriers').doc('dispatch-a').collection('documents').add({ type: 'government_id', status: 'pending', fileUrl: 'z' }));
     await assertFails(dispatchA().collection('couriers').doc('dispatch-a').collection('documents').add({ type: 'government_id', status: 'approved', fileUrl: 'z' }));
     await assertFails(collectorA().collection('couriers').doc('dispatch-a').get());
+});
+
+// ---------- partner applications ----------
+test('partner applications: applicant and admin read; everyone else blocked', async () => {
+    await assertSucceeds(patientA().collection('partner_applications').doc('app-a').get());
+    await assertSucceeds(platformAdmin().collection('partner_applications').doc('app-a').get());
+    await assertFails(patientB().collection('partner_applications').doc('app-a').get());
+    await assertFails(anon().collection('partner_applications').doc('app-a').get());
+});
+
+test('partner applications are server-written only — no client may create or edit', async () => {
+    await assertFails(patientA().collection('partner_applications').add({ applicantUid: PATIENT_A, status: 'submitted' }));
+    await assertFails(patientA().collection('partner_applications').doc('app-a').update({ status: 'approved' }));
+    await assertFails(platformAdmin().collection('partner_applications').doc('app-a').update({ status: 'approved' }));
+    await assertFails(platformAdmin().collection('partner_applications').doc('app-a').delete());
 });
 
 // ---------- lab staff roster ----------

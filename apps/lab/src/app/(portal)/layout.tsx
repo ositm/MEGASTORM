@@ -43,12 +43,12 @@ export default function PortalLayout({
                 <div className="max-w-md space-y-4 rounded-xl bg-white p-8 text-center shadow">
                     <h1 className="text-xl font-bold">This portal is for laboratory accounts</h1>
                     <p className="text-sm text-muted-foreground">
-                        Your account isn&apos;t linked to a laboratory yet. Register your facility
-                        and our team will verify it, or sign in with a lab account.
+                        Your account isn&apos;t linked to a laboratory yet. Submit a partner
+                        application and our team will verify it, or sign in with a lab account.
                     </p>
                     <div className="flex justify-center gap-3">
                         <Button asChild>
-                            <Link href="/register">Register your lab</Link>
+                            <Link href="/register">Apply to join</Link>
                         </Button>
                         <Button asChild variant="outline">
                             <Link href="/signin">Use another account</Link>

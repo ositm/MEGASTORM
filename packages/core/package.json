@@ -10,6 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test \"src/*.test.ts\""
   },
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
   "peerDependencies": {
     "firebase": "^11.0.0"
   },

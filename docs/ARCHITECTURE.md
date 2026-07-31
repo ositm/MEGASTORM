@@ -90,6 +90,9 @@ Two complementary places, both using the **Firebase Admin SDK**:
 users/{uid}                 profile; role mirror (display only — claims are authoritative)
 labs/{labId}                facility profile, geo, verification status
 labs/{labId}/staff/{uid}
+partner_applications/{id}   lab onboarding case: facility, licensing, director, capability,
+                            document refs, status; server-written only. Approval creates
+                            or claims labs/{labId} and grants the lab_admin claim.
 labs/{labId}/tests/{testId} price/turnaround per lab (catalog ref)
 catalog/tests/{testId}      canonical test defs incl. specimen type + reference ranges
 catalog/packages/{pkgId}
@@ -135,7 +138,7 @@ Account, lab search + map, test catalog, order creation (walk-in or home collect
 Registration + document upload (license, government ID, qualifications) → verification case → admin approval sets `collector` claim. Online/offline toggle, job offers (FCM push), accept/reject, navigation link-out, per-order collection checklist (identity check, tube types from `catalog.specimenType`, barcode generate/scan), custody events at every step, handover to dispatch/lab, earnings ledger, job history, support chat (v1: WhatsApp/link-out; v2: in-app).
 
 ### apps/lab
-Facility registration → admin approval. Staff management (invite → `lab_staff` claim scoped by `labId`). Incoming samples queue, barcode scan to receive, processing-stage updates, result upload (PDF/images), **two-step validate → release** (uploader ≠ releaser where staffing allows), test/price catalog management, analytics (orders, turnaround, revenue).
+Partner application (`/register`): a multi-step wizard capturing facility registration (CAC/RC), regulatory licensing (MLSCN facility licence + expiry, state premises permit, accreditations), the laboratory director's identity and registration, location (with an optional GPS pin), operating capability (test categories, capacity, turnaround, staffing, hours), and required documents. Submission is server-validated, stored in `partner_applications`, emailed as a formatted dossier with the uploads attached to the ops inbox, and queued for the platform admin. Approval publishes `labs/{labId}` and grants `lab_admin`. Then: staff management (invite → `lab_staff` claim scoped by `labId`). Incoming samples queue, barcode scan to receive, processing-stage updates, result upload (PDF/images), **two-step validate → release** (uploader ≠ releaser where staffing allows), test/price catalog management, analytics (orders, turnaround, revenue).
 
 ### apps/admin
 Verification queues (collectors, labs) with document viewer, user management + role grants, live ops map (active jobs), full audit-log browser, dispute handling, platform metrics. Internal only — IP-restrict or SSO-gate it.

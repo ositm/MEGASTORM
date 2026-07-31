@@ -4,12 +4,16 @@ import { useEffect, useState } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { useFirebase } from '@/firebase/FirebaseProvider';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { JobStatus } from '@lablink/core';
+import { JobStatus, OPEN_PARTNER_APPLICATION_STATUSES, PartnerApplicationStatus } from '@lablink/core';
 
 // Jobs holding a sample that hasn't reached a lab yet.
 const IN_TRANSIT: JobStatus[] = ['accepted', 'arrived', 'collected', 'handed_over'];
 
+// Partner applications still waiting on a decision.
+const OPEN_APPLICATIONS: PartnerApplicationStatus[] = [...OPEN_PARTNER_APPLICATION_STATUSES];
+
 export interface AdminOpsStats {
+    pendingPartnerApplications: number;
     pendingLabClaims: number;
     pendingCollectors: number;
     pendingCouriers: number;
@@ -26,6 +30,7 @@ export function useAdminOps() {
     const { firestore } = useFirebase();
     const { profile, loading: profileLoading } = useUserProfile();
     const [stats, setStats] = useState<AdminOpsStats>({
+        pendingPartnerApplications: 0,
         pendingLabClaims: 0,
         pendingCollectors: 0,
         pendingCouriers: 0,
@@ -41,6 +46,10 @@ export function useAdminOps() {
         }
 
         const watches: Array<{ q: ReturnType<typeof query>; key: keyof AdminOpsStats }> = [
+            {
+                q: query(collection(firestore, 'partner_applications'), where('status', 'in', OPEN_APPLICATIONS)),
+                key: 'pendingPartnerApplications',
+            },
             { q: query(collection(firestore, 'lab_claims'), where('status', '==', 'pending')), key: 'pendingLabClaims' },
             { q: query(collection(firestore, 'collectors'), where('verificationStatus', '==', 'pending_review')), key: 'pendingCollectors' },
             { q: query(collection(firestore, 'couriers'), where('verificationStatus', '==', 'pending_review')), key: 'pendingCouriers' },

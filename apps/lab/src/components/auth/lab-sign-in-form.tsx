@@ -135,9 +135,9 @@ export function LabSignInForm() {
                 </Button>
 
                 <div className="text-center text-sm">
-                    <span className="text-gray-500">New Partner? </span>
+                    <span className="text-gray-500">New partner? </span>
                     <Link href="/register" className="font-semibold text-blue-600 hover:text-blue-500">
-                        Register your Lab
+                        Apply to join the network
                     </Link>
                 </div>
             </form>

@@ -84,3 +84,12 @@ export function decideCourierViaApi(
 ): Promise<{ ok: true }> {
     return apiPost(user, `/api/admin/couriers/${uid}`, { action });
 }
+
+export function decidePartnerApplicationViaApi(
+    user: User,
+    applicationId: string,
+    action: 'approve' | 'reject' | 'review',
+    note?: string
+): Promise<{ ok: true; labId?: string }> {
+    return apiPost(user, `/api/admin/partner-applications/${applicationId}`, { action, note });
+}

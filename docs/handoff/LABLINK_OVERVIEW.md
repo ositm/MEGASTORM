@@ -91,8 +91,8 @@ Three properties make this trustworthy:
 2. `/dispatch` lists the handed-over sample → **Delivered to lab** completes the transit leg.
 
 ### D. Test the laboratory flow
-1. Fourth account → https://megastorm-lab-eight.vercel.app → **Register your Lab** → pick a listed facility → submit the claim.
-2. As admin, approve it under `/admin/labs` (*Pending access requests*).
+1. Go to https://megastorm-lab-eight.vercel.app → **Apply to join the network**. Create the lab account inline (step 1), then work through the application: facility & CAC details, location (optionally pinning the site by GPS), MLSCN licensing and laboratory director, operating capability, and the three required documents — any PDFs or images will do for a test. Review and sign to submit; you'll get a reference like `LL-PA-202607-9F3A21`.
+2. A formatted dossier of the whole application, with the uploads attached, lands in the operations inbox (healthesphere@gmail.com). As admin, the case is waiting under `/admin/partners` — expand it to read every field and open each document, then **Approve & publish lab**. That creates the lab record and grants the applicant lab-admin access in one step.
 3. Re-login on the lab portal: the **Orders** queue shows the order → **Received** → **Start testing** → **Complete** → go to **Upload Results**, attach a PDF → back in Orders: **Validate** → **Release**.
 4. The patient instantly gets an in-app notification and an email from noreply@healthesphere.com with the result.
 5. Try **Staff**: add a fifth account's email as staff — that account can receive/test/upload but the *Validate/Release* actions are refused for it (two-step control).

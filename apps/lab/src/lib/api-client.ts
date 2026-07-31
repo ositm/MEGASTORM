@@ -1,5 +1,5 @@
 import type { User } from 'firebase/auth';
-import type { JobAction, OrderEventType, OrderItem, OrderType } from '@lablink/core';
+import type { JobAction, OrderEventType, OrderItem, OrderType, PartnerApplicationInput } from '@lablink/core';
 
 async function apiPost<T>(user: User, path: string, body: unknown): Promise<T> {
     const token = await user.getIdToken();
@@ -75,6 +75,20 @@ export function addLabStaffViaApi(user: User, email: string): Promise<{ ok: true
 
 export function removeLabStaffViaApi(user: User, uid: string): Promise<{ ok: true }> {
     return apiPost(user, '/api/lab/staff', { action: 'remove', uid });
+}
+
+export interface PartnerApplicationResult {
+    ok: true;
+    id: string;
+    reference: string;
+    emailed: boolean;
+}
+
+export function submitPartnerApplicationViaApi(
+    user: User,
+    application: PartnerApplicationInput
+): Promise<PartnerApplicationResult> {
+    return apiPost(user, '/api/partner-applications', application);
 }
 
 export function decideCourierViaApi(

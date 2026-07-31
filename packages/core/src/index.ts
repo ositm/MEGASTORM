@@ -4,6 +4,7 @@ export * from './orders';
 export * from './collectors';
 export * from './couriers';
 export * from './geo';
+export * from './partners';
 
 // Medical test from catalog
 export interface MedicalTest {

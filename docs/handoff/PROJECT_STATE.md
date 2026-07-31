@@ -48,6 +48,7 @@ node scripts/set-role.mjs --list   # inspect / grant role claims
 | GOOGLE_PLACES_SERVER_KEY (unrestricted, Places-only) | ✓ | – |
 | NEXT_PUBLIC_LAB_APP_URL (= lab portal URL) | ✓ | – |
 | NEXT_PUBLIC_APP_URL (= patient URL, for email links) | – | ✓ |
+| PARTNER_APPLICATIONS_EMAIL (optional; defaults to healthesphere@gmail.com) | – | optional |
 
 Google key security: browser key is restricted to `megastorm-omega.vercel.app`, `localhost:3000`, `localhost:9002`; server key is API-restricted to Places API (New).
 

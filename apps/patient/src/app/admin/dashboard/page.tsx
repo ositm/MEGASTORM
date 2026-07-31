@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, CheckCircle, DollarSign, Loader2, ShieldCheck, UserCheck, Truck, Navigation } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, DollarSign, Loader2, ShieldCheck, UserCheck, Truck, Navigation, Handshake } from 'lucide-react';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useLabOrders } from '@/hooks/use-lab-orders';
 import { useAdminOps } from '@/hooks/use-admin-ops';
@@ -63,6 +63,7 @@ export default function AdminDashboardPage() {
 
     // Verification queues awaiting a decision + samples in the field.
     const attention = [
+        { title: 'Partner applications', value: ops.pendingPartnerApplications, icon: Handshake, href: '/admin/partners' },
         { title: 'Lab access requests', value: ops.pendingLabClaims, icon: ShieldCheck, href: '/admin/labs' },
         { title: 'Collectors to verify', value: ops.pendingCollectors, icon: UserCheck, href: '/admin/collectors' },
         { title: 'Couriers to verify', value: ops.pendingCouriers, icon: Truck, href: '/admin/couriers' },
@@ -102,7 +103,7 @@ export default function AdminDashboardPage() {
 
                     <div>
                         <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-400 mb-3">Needs attention</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                             {attention.map((item) => {
                                 const card = (
                                     <Card className={`border-none shadow-sm ${item.href ? 'transition-shadow hover:shadow-md' : ''} ${item.value > 0 ? 'ring-1 ring-amber-300' : ''}`}>
